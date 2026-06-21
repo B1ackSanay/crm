@@ -1,4 +1,6 @@
+<!-- я пидар -->
 <template>
+
   <LoginScreen v-if="!user" @login-success="onLogin" />
 
   <div v-else class="app-layout">
