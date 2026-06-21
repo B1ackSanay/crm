@@ -10,11 +10,5 @@
     "login": "mng",
     "password": "mng",
     "role": "manager"
-  },
-  {
-    "id": 3,
-    "login": "mng2",
-    "password": "mng",
-    "role": "mng_of_role"
   }
 ]
