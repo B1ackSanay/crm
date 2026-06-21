@@ -29,23 +29,23 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+function getOrders() {
+  return JSON.parse(fs.readFileSync(path.join(__dirname, 'data/orders.json'), 'utf8'));
+}
+
 function getUsers() {
   return JSON.parse(fs.readFileSync(path.join(__dirname, 'data/users.json'), 'utf8'));
 }
-
 function getRoles() {
   return JSON.parse(fs.readFileSync(path.join(__dirname, 'data/roles.json'), 'utf8'));
 }
-
 function saveRoles(roles) {
   fs.writeFileSync(path.join(__dirname, 'data/roles.json'), JSON.stringify(roles, null, 2), 'utf8');
 }
-
 function excludeTechAdmin(roles) {
   const { tech_admin, ...rest } = roles;
   return rest;
 }
-
 function requirePageAccess(pageName) {
   return (req, res, next) => {
     if (!req.session.user) {
@@ -105,6 +105,10 @@ app.get('/api/session', (req, res) => {
     user: req.session.user,
     pages: roleConfig ? roleConfig.pages : []
   });
+});
+
+app.get('/api/orders', requirePageAccess('Заявки'), (req, res) => {
+  res.json(getOrders());
 });
 
 app.get('/api/roles', requirePageAccess('Роли и права'), (req, res) => {

@@ -89,28 +89,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
-const orders = ref([
-  { id: 156, name: 'Александр', phone: '+7 (916) 234-56-78', email: 'alex@mail.ru', company: 'ООО "ТехноСервис"', created_at: '15.03.2026', deal: 101 },
-  { id: 89, name: 'Мария', phone: '+7 (903) 123-45-67', email: 'maria@bk.ru', company: 'ЗАО "СтройИнвест"', created_at: '14.03.2026', deal: 87 },
-  { id: 234, name: 'Дмитрий', phone: '+7 (904) 063-26-07', email: 'dmitry@yandex.ru', company: 'ООО "СОФТАРТ"', created_at: '14.03.2026', deal: 234 },
-  { id: 45, name: 'Елена', phone: '+7 (909) 987-65-43', email: 'elena@mail.com', company: 'ИП "Петрова"', created_at: '13.03.2026', deal: 56 },
-  { id: 312, name: 'Игорь', phone: '+7 (917) 111-22-33', email: 'igor@bk.ru', company: 'ООО "АвтоПлюс"', created_at: '12.03.2026', deal: 312 },
-  { id: 67, name: 'Светлана', phone: '+7 (905) 444-55-66', email: 'svetlana@yandex.ru', company: 'ООО "Стоматология+"', created_at: '11.03.2026', deal: 45 },
-  { id: 189, name: 'Павел', phone: '+7 (910) 777-88-99', email: 'pavel@mail.ru', company: 'ЗАО "ЛогистикЦентр"', created_at: '10.03.2026', deal: 189 },
-  { id: 73, name: 'Анна', phone: '+7 (908) 555-66-77', email: 'anna@bk.ru', company: 'ООО "МаркетИнновации"', created_at: '09.03.2026', deal: 73 },
-  { id: 402, name: 'Сергей', phone: '+7 (912) 888-99-00', email: 'sergey@yandex.ru', company: 'ГК "АгроПром"', created_at: '08.03.2026', deal: 402 },
-  { id: 28, name: 'Ольга', phone: '+7 (906) 222-33-44', email: 'olga@mail.com', company: 'ООО "Ресторанная сеть"', created_at: '07.03.2026', deal: 28 },
-  { id: 61, name: 'Михаил', phone: '+7 (911) 333-44-55', email: 'mikhail@bk.ru', company: 'ЗАО "ИТ-Решения"', created_at: '06.03.2026', deal: 156 },
-  { id: 99, name: 'Татьяна', phone: '+7 (914) 666-77-88', email: 'tatiana@yandex.ru', company: 'ООО "ФитнесКлуб"', created_at: '05.03.2026', deal: 67 },
-  { id: 243, name: 'Виктор', phone: '+7 (913) 999-00-11', email: 'victor@mail.ru', company: 'Агентство "Недвижимость+"', created_at: '04.03.2026', deal: 243 },
-  { id: 504, name: 'Наталья', phone: '+7 (915) 777-66-55', email: 'natalia@bk.ru', company: 'ООО "Образовательные технологии"', created_at: '03.03.2026', deal: 504 },
-  { id: 38, name: 'Андрей', phone: '+7 (907) 444-33-22', email: 'andrey@yandex.ru', company: 'ООО "Гостиничная сеть"', created_at: '02.03.2026', deal: 38 },
-  { id: 92, name: 'Екатерина', phone: '+7 (916) 555-44-33', email: 'ekaterina@mail.com', company: 'ООО "Такси-Сервис"', created_at: '01.03.2026', deal: 92 },
-  { id: 178, name: 'Роман', phone: '+7 (918) 333-22-11', email: 'roman@bk.ru', company: 'Юридическая компания "Альфа"', created_at: '28.02.2026', deal: 178 },
-  { id: 5, name: 'Ирина', phone: '+7 (905) 111-00-99', email: 'irina@yandex.ru', company: 'ООО "Торговый Дом"', created_at: '27.02.2026', deal: 5 }
-])
+const orders = ref([])
+onMounted(async () => {
+  const res = await fetch('/api/orders')
+  orders.value = await res.json()
+})
 
 // Состояние сортировки
 const sortKey = ref(null)

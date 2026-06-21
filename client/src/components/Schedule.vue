@@ -226,7 +226,7 @@ const calendarDays = computed(() => {
 
 .calendar-header {
   display: flex;
-  align-items: center;
+  justify-content: space-between;
   gap: 16px;
   margin-bottom: 16px;
 }

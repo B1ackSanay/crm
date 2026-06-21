@@ -1,0 +1,4 @@
+[
+  { "id": 1, "name": "Дмитрий", "phone": "+7 (904) 063-26-07", "email": "example@email.com", "company": "ООО \"СОФТАРТ\"", "created_at": "01.01.2026", "deal": 1 },
+  { "id": 2, "name": "Анна", "phone": "+7 (916) 234-56-78", "email": "anna@email.com", "company": "ООО \"ВЕКТОР\"", "created_at": "03.01.2026", "deal": 2 }
+]
