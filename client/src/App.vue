@@ -1,17 +1,16 @@
 <template>
   <div class="app-layout">
-    <!-- Если не авторизован — показываем экран входа -->
-    <LoginScreen v-if="!isAuthenticated" @login-success="handleLoginSuccess" />
+    <LoginScreen v-if="!user" @login-success="handleLoginSuccess" />
 
-    <!-- Если авторизован — показываем основное приложение -->
     <template v-else>
-      <Header @navigate="handleNavigate" />
+      <Header :user="user" @navigate="handleNavigate" @logout="handleLogout" />
 
       <div class="app-body">
-        <Sidebar @navigate="handleNavigate" />
+        <Sidebar :pages="pages" @navigate="handleNavigate" />
         
         <main class="page-content">
-          <component :is="currentComponent" />
+          <component v-if="currentComponent" :is="currentComponent" />
+          <p v-else>Нет доступных разделов</p>
         </main>
       </div>
     </template>
@@ -19,7 +18,7 @@
 </template>
 
 <script setup>
-import { ref, shallowRef } from 'vue';
+import { ref, shallowRef, onMounted } from 'vue';
 import Header from './components/Header.vue';
 import Sidebar from './components/Sidebar.vue';
 import LoginScreen from './components/LoginScreen.vue';
@@ -29,8 +28,9 @@ import OrderPage from './components/OrderPage.vue';
 import Roles from './components/Roles.vue';
 import Schedule from './components/Schedule.vue';
 
-// Состояние авторизации
-const isAuthenticated = ref(false);
+const user = ref(null);
+const pages = ref([]);
+const currentComponent = shallowRef(null);
 
 const componentMap = {
   'Заявки': OrderPage,
@@ -41,8 +41,10 @@ const componentMap = {
   'Звонки': Calls
 };
 
-// По умолчанию показываем компонент Заявки (OrderPage)
-const currentComponent = shallowRef(OrderPage);
+function setDefaultPage(pagesList) {
+  const firstPage = pagesList[0];
+  currentComponent.value = firstPage ? componentMap[firstPage] : null;
+}
 
 const handleNavigate = (page) => {
   const component = componentMap[page];
@@ -51,11 +53,26 @@ const handleNavigate = (page) => {
   }
 };
 
-// Обработчик успешного входа
 const handleLoginSuccess = (data) => {
-  isAuthenticated.value = true;
-  console.log('Успешный вход:', data);
+  user.value = data.user;
+  pages.value = data.pages || [];
+  setDefaultPage(pages.value);
 };
+
+async function handleLogout() {
+  await fetch('/api/logout', { method: 'POST' });
+  user.value = null;
+  pages.value = [];
+  currentComponent.value = null;
+}
+
+onMounted(async () => {
+  const res = await fetch('/api/session');
+  const data = await res.json();
+  user.value = data.user;
+  pages.value = data.pages || [];
+  if (user.value) setDefaultPage(pages.value);
+});
 </script>
 
 <style>
