@@ -48,12 +48,14 @@
         </div>
       </div>
       
-      <button class="profile-button" aria-label="Профиль">
+      <button class="profile-button" aria-label="Профиль" :title="user?.login">
         <svg class="icon profile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
           <circle cx="12" cy="7" r="4"></circle>
         </svg>
       </button>
+
+      <button class="logout-button" @click="$emit('logout')">Выйти</button>
     </div>
   </header>
 </template>
@@ -61,8 +63,15 @@
 <script setup>
 import { ref, computed } from 'vue'
 
-// Определяем emits для навигации
-const emit = defineEmits(['navigate'])
+defineProps({
+  user: {
+    type: Object,
+    default: null
+  }
+})
+
+// Определяем emits для навигации и выхода
+const emit = defineEmits(['navigate', 'logout'])
 
 // Состояние поиска
 const searchQuery = ref('')
@@ -284,6 +293,21 @@ const handleBlur = () => {
 
     .profile-button:hover {
     background-color: #f7fafc;
+    }
+
+    .logout-button {
+    background-color: #edf2f7;
+    color: #4a5568;
+    border: none;
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    }
+
+    .logout-button:hover {
+    background-color: #e2e8f0;
     }
 
     /* Стили для результатов поиска */
