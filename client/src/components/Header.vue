@@ -1,412 +1,586 @@
 <template>
-  <header class="main-header">
-    <!-- Левая часть: Логотип и кнопка -->
-    <div class="header-left">
-      <img src="../components/icons/logo.png" alt="">
-      <button class="site-button">Перейти на сайт</button>
-    </div>
-
-    <!-- Правая часть: Поиск и профиль -->
-    <div class="header-right">
-      <div class="search-container">
-        <input 
-          type="text" 
-          placeholder="Поиск" 
-          class="search-input"
-          v-model="searchQuery"
-          @input="handleSearch"
-          @focus="handleFocus"
-          @blur="handleBlur"
-          ref="searchInput"
-        />
-        <svg class="icon search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+  <div class="roles-page">
+    <div class="page-header">
+      <h1 class="page-title">Роли и права</h1>
+      <button class="add-role-btn" @click="openCreateModal" title="Добавить роль">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
         </svg>
-        
-        <!-- Выпадающий список результатов поиска -->
-        <div v-if="showResults && filteredItems.length > 0" class="search-results">
-          <div 
-            v-for="item in filteredItems" 
-            :key="item.path"
-            class="search-result-item"
-            @mousedown.prevent="navigateTo(item.path)"
-          >
-            <span class="result-icon">
-              <img :src="item.icon" alt="" class="result-icon-img" />
-            </span>
-            <span class="result-label">{{ item.label }}</span>
-            <span class="result-category">{{ item.category }}</span>
-          </div>
-        </div>
-        
-        <!-- Сообщение, если ничего не найдено -->
-        <div v-if="showResults && searchQuery.length >= 1 && filteredItems.length === 0" class="search-results no-results">
-          <div class="search-result-item">
-            <span class="result-label">Ничего не найдено</span>
-          </div>
-        </div>
-      </div>
-      
-      <button class="profile-button" aria-label="Профиль" :title="user?.login">
-        <svg class="icon profile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-          <circle cx="12" cy="7" r="4"></circle>
-        </svg>
+        <span>Добавить роль</span>
       </button>
-
-      <button class="logout-button" @click="$emit('logout')">Выйти</button>
     </div>
-  </header>
+
+    <div class="permissions-card">
+      <p v-if="isLoading">Загрузка...</p>
+      <p v-else-if="loadError">{{ loadError }}</p>
+      <div v-else class="table-container">
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th class="col-role">Роль</th>
+              <th v-for="page in pagesList" :key="page">{{ page }}</th>
+              <th class="col-actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="role in rolesData" :key="role.key">
+              <td class="role-name-cell">{{ role.name }}</td>
+              <td v-for="page in pagesList" :key="page">
+                <span :class="['status-badge', role.permissions[page] ? 'has-access' : 'no-access']">
+                  {{ role.permissions[page] ? 'Есть доступ' : 'Нет доступа' }}
+                </span>
+              </td>
+              <td class="col-actions">
+                <div class="role-actions">
+                  <button class="menu-trigger" @click.stop="toggleMenu(role.key)">⋮</button>
+                  <div v-if="openMenuKey === role.key" class="dropdown-menu" @click.stop>
+                    <button class="dropdown-item" @click="openEditModal(role)">Изменить</button>
+                    <button class="dropdown-item dropdown-item-danger" @click="handleDeleteRole(role.key)">Удалить</button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div v-if="isModalOpen" class="modal-overlay" @click.self="closeModal">
+      <div class="modal-window">
+        <div class="modal-header">
+          <h2 class="modal-title">{{ editingKey ? 'Редактирование роли' : 'Создание новой роли' }}</h2>
+          <button class="close-btn" @click="closeModal">&times;</button>
+        </div>
+
+        <form @submit.prevent="handleSubmitRole">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="role-label" class="form-label">Название роли</label>
+              <input
+                id="role-label"
+                v-model.trim="formLabel"
+                type="text"
+                class="form-input"
+                placeholder="Например: Менеджер по продажам"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="role-key" class="form-label">Название в коде</label>
+              <input
+                id="role-key"
+                v-model="formKey"
+                type="text"
+                class="form-input"
+                placeholder="sales_manager"
+                :disabled="!!editingKey"
+                @input="formKey = formKey.toLowerCase().replace(/[^a-z0-9_]/g, '')"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Доступные страницы</label>
+              <div class="checkbox-grid">
+                <label v-for="page in pagesList" :key="page" class="checkbox-label">
+                  <input type="checkbox" v-model="formPages[page]" class="checkbox-input" />
+                  <span class="checkbox-text">{{ page }}</span>
+                </label>
+              </div>
+            </div>
+
+            <p v-if="formError" class="form-error">{{ formError }}</p>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeModal">Отмена</button>
+            <button type="submit" class="btn btn-primary" :disabled="!formLabel || !formKey">
+              {{ editingKey ? 'Сохранить' : 'Создать' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
-defineProps({
-  user: {
-    type: Object,
-    default: null
+const pagesList = ref([])
+const rolesData = ref([])
+const isLoading = ref(true)
+const loadError = ref('')
+
+const isModalOpen = ref(false)
+const editingKey = ref(null)
+const formLabel = ref('')
+const formKey = ref('')
+const formPages = ref({})
+const formError = ref('')
+
+const openMenuKey = ref(null)
+
+function buildRolesData(rolesObj) {
+  return Object.entries(rolesObj).map(([key, role]) => ({
+    key,
+    name: role.label,
+    permissions: pagesList.value.reduce((acc, page) => {
+      acc[page] = (role.pages || []).includes(page)
+      return acc
+    }, {})
+  }))
+}
+
+async function loadRoles() {
+  isLoading.value = true
+  loadError.value = ''
+  try {
+    const res = await fetch('/api/roles')
+    if (!res.ok) throw new Error()
+    const data = await res.json()
+
+    pagesList.value = data.pages
+    rolesData.value = buildRolesData(data.roles)
+  } catch (e) {
+    loadError.value = 'Не удалось загрузить роли'
+  } finally {
+    isLoading.value = false
   }
+}
+
+function resetForm() {
+  formLabel.value = ''
+  formKey.value = ''
+  formPages.value = pagesList.value.reduce((acc, page) => ({ ...acc, [page]: false }), {})
+  formError.value = ''
+}
+
+function openCreateModal() {
+  editingKey.value = null
+  resetForm()
+  isModalOpen.value = true
+}
+
+function openEditModal(role) {
+  editingKey.value = role.key
+  formLabel.value = role.name
+  formKey.value = role.key
+  formPages.value = pagesList.value.reduce((acc, page) => ({ ...acc, [page]: role.permissions[page] }), {})
+  formError.value = ''
+  isModalOpen.value = true
+  openMenuKey.value = null
+}
+
+function closeModal() {
+  isModalOpen.value = false
+  editingKey.value = null
+  resetForm()
+}
+
+async function handleSubmitRole() {
+  formError.value = ''
+
+  const selectedPages = pagesList.value.filter(page => formPages.value[page])
+  const payload = { label: formLabel.value, key: formKey.value, pages: selectedPages }
+
+  try {
+    const url = editingKey.value ? `/api/roles/${editingKey.value}` : '/api/roles'
+    const method = editingKey.value ? 'PUT' : 'POST'
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      formError.value = data.error || 'Не удалось сохранить роль'
+      return
+    }
+
+    pagesList.value = data.pages
+    rolesData.value = buildRolesData(data.roles)
+    closeModal()
+  } catch (e) {
+    formError.value = 'Не удалось подключиться к серверу'
+  }
+}
+
+function toggleMenu(key) {
+  openMenuKey.value = openMenuKey.value === key ? null : key
+}
+
+async function handleDeleteRole(key) {
+  openMenuKey.value = null
+  if (!confirm('Удалить роль?')) return
+
+  try {
+    const res = await fetch(`/api/roles/${key}`, { method: 'DELETE' })
+    const data = await res.json()
+
+    if (!res.ok) {
+      alert(data.error || 'Не удалось удалить роль')
+      return
+    }
+
+    pagesList.value = data.pages
+    rolesData.value = buildRolesData(data.roles)
+  } catch (e) {
+    alert('Не удалось подключиться к серверу')
+  }
+}
+
+function handleOutsideClick() {
+  openMenuKey.value = null
+}
+
+onMounted(() => {
+  loadRoles()
+  window.addEventListener('click', handleOutsideClick)
 })
 
-// Определяем emits для навигации и выхода
-const emit = defineEmits(['navigate', 'logout'])
-
-// Состояние поиска
-const searchQuery = ref('')
-const showResults = ref(false)
-const searchInput = ref(null)
-
-// Список всех пунктов меню для поиска с иконками из Sidebar
-const menuItems = [
-  { 
-    label: 'Заявки', 
-    path: 'Заявки', 
-    icon: './icons/user.svg', 
-    category: 'Маркетинг' 
-  },
-  { 
-    label: 'Расписание', 
-    path: 'Расписание', 
-    icon: './icons/calendar.svg', 
-    category: 'Маркетинг' 
-  },
-  { 
-    label: 'Роли и права', 
-    path: 'Роли и права', 
-    icon: './icons/settings.svg', 
-    category: 'Админка' 
-  },
-  { 
-    label: 'Конфигурация', 
-    path: 'Конфигурация', 
-    icon: './icons/settings.svg', 
-    category: 'Админка' 
-  },
-  { 
-    label: 'Сделки', 
-    path: 'Сделки', 
-    icon: './icons/settings.svg', 
-    category: 'Прочее' 
-  },
-  { 
-    label: 'Звонки', 
-    path: 'Звонки', 
-    icon: './icons/call.svg', 
-    category: 'Прочее' 
-  }
-]
-
-// Функция для проверки совпадения по началу слова
-const matchesQuery = (text, query) => {
-  if (!text || !query) return false
-  const lowerText = text.toLowerCase()
-  const lowerQuery = query.toLowerCase()
-  
-  // Проверяем, начинается ли текст с запроса
-  if (lowerText.startsWith(lowerQuery)) return true
-  
-  // Проверяем каждое слово в тексте
-  const words = lowerText.split(' ')
-  for (const word of words) {
-    if (word.startsWith(lowerQuery)) return true
-  }
-  
-  return false
-}
-
-// Фильтрация элементов по поисковому запросу (с 1 символа)
-const filteredItems = computed(() => {
-  if (!searchQuery.value || searchQuery.value.length < 1) return []
-  
-  const query = searchQuery.value.trim()
-  
-  return menuItems.filter(item => 
-    matchesQuery(item.label, query) ||
-    matchesQuery(item.category, query)
-  )
+onUnmounted(() => {
+  window.removeEventListener('click', handleOutsideClick)
 })
-
-// Обработчик ввода
-const handleSearch = () => {
-  if (searchQuery.value.length >= 1) {
-    showResults.value = true
-  } else {
-    showResults.value = false
-  }
-}
-
-// Обработчик фокуса
-const handleFocus = () => {
-  if (searchQuery.value.length >= 1 && filteredItems.value.length > 0) {
-    showResults.value = true
-  }
-}
-
-// Навигация к выбранному пункту
-const navigateTo = (path) => {
-  if (path) {
-    emit('navigate', path)
-    searchQuery.value = ''
-    showResults.value = false
-  }
-}
-
-// Обработчик потери фокуса (с задержкой для клика по результату)
-const handleBlur = () => {
-  setTimeout(() => {
-    showResults.value = false
-  }, 200)
-}
 </script>
 
 <style scoped>
-    .main-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 24px;
-    background-color: #E0F2FE;
-    border-bottom: 1px solid #e2e8f0;
-    font-family: system-ui, -apple-system, sans-serif;
-    border-radius: 30px;
-    position: relative;
-    }
+.roles-page {
+  width: 100%;
+  font-family: system-ui, -apple-system, sans-serif;
+  box-sizing: border-box;
+}
 
-    /* Левая часть */
-    .header-left {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    }
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
 
-    .logo-container {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.1;
-    }
+.page-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0;
+}
 
-    .logo-subtitle {
-    font-size: 10px;
-    color: #718096;
-    text-transform: lowercase;
-    }
+.add-role-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: #007ecc;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
 
-    .logo-title {
-    font-size: 20px;
-    font-weight: 800;
-    color: #1a202c;
-    margin: 0;
-    letter-spacing: 0.5px;
-    }
+.add-role-btn:hover {
+  background-color: #0066a3;
+}
 
-    .site-button {
-    background-color: #3182ce;
-    color: #ffffff;
-    border: none;
-    border-radius: 20px;
-    padding: 6px 16px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    }
+.add-role-btn svg {
+  width: 16px;
+  height: 16px;
+}
 
-    .site-button:hover {
-    background-color: #2b6cb0;
-    }
+.permissions-card {
+  background-color: #ebf8ff;
+  border-radius: 12px;
+  padding: 32px;
+}
 
-    /* Правая часть */
-    .header-right {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    }
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+}
 
-    .search-container {
-    position: relative;
-    display: flex;
-    align-items: center;
-    }
+.matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
 
-    .search-input {
-    background-color: #f7fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 20px;
-    padding: 6px 16px 6px 36px;
-    font-size: 14px;
-    width: 220px;
-    outline: none;
-    transition: all 0.2s;
-    }
+.matrix-table th {
+  font-weight: 600;
+  color: #1a202c;
+  padding: 16px 12px;
+  border-bottom: 1px solid rgba(0, 126, 204, 0.15);
+}
 
-    .search-input:focus {
-    background-color: #ffffff;
-    border-color: #3182ce;
-    width: 300px;
-    }
+.matrix-table th.col-role {
+  width: 200px;
+}
 
-    /* Иконки */
-    .icon {
-    width: 18px;
-    height: 18px;
-    color: #4a5568;
-    }
+.col-actions {
+  width: 40px;
+  text-align: right;
+}
 
-    .search-icon {
-    position: absolute;
-    left: 12px;
-    pointer-events: none;
-    }
+.matrix-table td {
+  padding: 20px 12px;
+  vertical-align: middle;
+}
 
-    .profile-button {
-    background: none;
-    border: none;
-    padding: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: background-color 0.2s;
-    }
+.matrix-table tbody tr:not(:last-child) td {
+  border-bottom: 1px solid rgba(0, 126, 204, 0.08);
+}
 
-    .profile-button:hover {
-    background-color: #f7fafc;
-    }
+.role-name-cell {
+  font-weight: 600;
+  color: #1a202c;
+}
 
-    .logout-button {
-    background-color: #edf2f7;
-    color: #4a5568;
-    border: none;
-    border-radius: 20px;
-    padding: 6px 16px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    }
+.status-badge {
+  display: inline-block;
+  font-weight: 500;
+}
 
-    .logout-button:hover {
-    background-color: #e2e8f0;
-    }
+.has-access {
+  color: #1a202c;
+}
 
-    /* Стили для результатов поиска */
-    .search-results {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
-    right: 0;
-    background: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e2e8f0;
-    max-height: 300px;
-    overflow-y: auto;
-    z-index: 1000;
-    min-width: 280px;
-    }
+.no-access {
+  color: #718096;
+}
 
-    .search-results.no-results {
-    padding: 12px 16px;
-    }
+.role-actions {
+  position: relative;
+  display: inline-block;
+}
 
-    .search-result-item {
-    display: flex;
-    align-items: center;
-    padding: 10px 16px;
-    cursor: pointer;
-    transition: background-color 0.15s;
-    gap: 12px;
-    }
+.menu-trigger {
+  background: none;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  color: #718096;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
 
-    .search-result-item:hover {
-    background-color: #f7fafc;
-    }
+.menu-trigger:hover {
+  background-color: #edf2f7;
+}
 
-    .result-icon {
-    flex-shrink: 0;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    }
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 140px;
+  z-index: 10;
+  overflow: hidden;
+}
 
-    .result-icon-img {
-    width: 16px;
-    height: 16px;
-    filter: invert(29%) sepia(8%) saturate(0%) hue-rotate(180deg) brightness(94%) contrast(85%);
-    }
+.dropdown-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #1a202c;
+  cursor: pointer;
+}
 
-    .result-label {
-    font-size: 14px;
-    font-weight: 500;
-    color: #1a202c;
-    flex: 1;
-    }
+.dropdown-item:hover {
+  background-color: #f7fafc;
+}
 
-    .result-category {
-    font-size: 12px;
-    color: #718096;
-    flex-shrink: 0;
-    padding: 2px 12px;
-    background: #f7fafc;
-    border-radius: 12px;
-    font-weight: 500;
-    }
+.dropdown-item-danger {
+  color: #e53e3e;
+}
 
-    /* Стилизация скролла */
-    .search-results::-webkit-scrollbar {
-    width: 6px;
-    }
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(26, 32, 44, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
 
-    .search-results::-webkit-scrollbar-track {
-    background: #f7fafc;
-    border-radius: 12px;
-    }
+.modal-window {
+  background-color: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  animation: modalFadeIn 0.2s ease-out;
+}
 
-    .search-results::-webkit-scrollbar-thumb {
-    background: #cbd5e0;
-    border-radius: 12px;
-    }
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
 
-    .search-results::-webkit-scrollbar-thumb:hover {
-    background: #a0aec0;
-    }
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #edf2f7;
+}
 
-    /* Адаптивность */
-    @media (max-width: 768px) {
-    .search-input {
-      width: 140px;
-    }
-    
-    .search-input:focus {
-      width: 180px;
-    }
-    
-    .search-results {
-      min-width: 240px;
-      right: -60px;
-    }
-    }
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #a0aec0;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: #4a5568;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 8px;
+}
+
+.form-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  color: #1a202c;
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: #007ecc;
+  box-shadow: 0 0 0 3px rgba(0, 126, 204, 0.15);
+}
+
+.form-input:disabled {
+  background-color: #f7fafc;
+  color: #a0aec0;
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  background-color: #f7fafc;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #edf2f7;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #007ecc;
+}
+
+.checkbox-text {
+  font-size: 13px;
+  color: #2d3748;
+}
+
+.form-error {
+  color: #e53e3e;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  background-color: #f7fafc;
+  border-top: 1px solid #edf2f7;
+}
+
+.btn {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.15s ease;
+}
+
+.btn-secondary {
+  background-color: #e2e8f0;
+  color: #4a5568;
+}
+
+.btn-secondary:hover {
+  background-color: #cbd5e0;
+}
+
+.btn-primary {
+  background-color: #007ecc;
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background-color: #0066a3;
+}
+
+.btn-primary:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+}
 </style>
