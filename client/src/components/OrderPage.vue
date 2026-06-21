@@ -6,26 +6,26 @@
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-period">Сегодня</div>
-        <div class="stat-value">0</div>
-        <div class="stat-footer text-gray">Нет данных за прошлый период</div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-period">Сегодня</div>
-        <div class="stat-value">0</div>
-        <div class="stat-footer text-gray">Нет данных за прошлый период</div>
+        <div class="stat-value">12</div>
+        <div class="stat-footer text-gray">+3 к прошлому периоду</div>
       </div>
       
       <div class="stat-card">
         <div class="stat-period">За 7 дней</div>
-        <div class="stat-value">0</div>
-        <div class="stat-footer text-gray">-0 к прошлому периоду</div>
+        <div class="stat-value">48</div>
+        <div class="stat-footer text-gray">+8 к прошлому периоду</div>
       </div>
       
       <div class="stat-card">
         <div class="stat-period">За 30 дней</div>
-        <div class="stat-value">0</div>
-        <div class="stat-footer text-gray">+0 к прошлому периоду</div>
+        <div class="stat-value">156</div>
+        <div class="stat-footer text-gray">+24 к прошлому периоду</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-period">Конверсия</div>
+        <div class="stat-value">32%</div>
+        <div class="stat-footer text-gray">+5% к прошлому периоду</div>
       </div>
     </div>
 
@@ -34,17 +34,31 @@
       <table class="orders-table">
         <thead>
           <tr>
-            <th>ID <span class="sort-icon">↓</span></th>
-            <th>Имя <span class="sort-icon">↓</span></th>
-            <th>Телефон <span class="sort-icon">↓</span></th>
-            <th>Email <span class="sort-icon">↓</span></th>
-            <th>Компания <span class="sort-icon">↓</span></th>
-            <th>Дата создания <span class="sort-icon">↓</span></th>
-            <th>Сделка <span class="sort-icon">↓</span></th>
+            <th @click="sortBy('id')">
+              ID <span class="sort-icon" :class="{ active: sortKey === 'id' }">{{ sortKey === 'id' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
+            </th>
+            <th @click="sortBy('name')">
+              Имя <span class="sort-icon" :class="{ active: sortKey === 'name' }">{{ sortKey === 'name' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
+            </th>
+            <th @click="sortBy('phone')">
+              Телефон <span class="sort-icon" :class="{ active: sortKey === 'phone' }">{{ sortKey === 'phone' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
+            </th>
+            <th @click="sortBy('email')">
+              Email <span class="sort-icon" :class="{ active: sortKey === 'email' }">{{ sortKey === 'email' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
+            </th>
+            <th @click="sortBy('company')">
+              Компания <span class="sort-icon" :class="{ active: sortKey === 'company' }">{{ sortKey === 'company' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
+            </th>
+            <th @click="sortBy('created_at')">
+              Дата создания <span class="sort-icon" :class="{ active: sortKey === 'created_at' }">{{ sortKey === 'created_at' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
+            </th>
+            <th @click="sortBy('deal')">
+              Сделка <span class="sort-icon" :class="{ active: sortKey === 'deal' }">{{ sortKey === 'deal' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
+            </th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="order in orders" :key="order.id">
+          <tr v-for="order in sortedOrders" :key="order.id">
             <td class="cell-id">{{ order.id }}</td>
             <td>{{ order.name }}</td>
             <td class="cell-phone">
@@ -63,8 +77,7 @@
             <td>{{ order.company }}</td>
             <td>
               <div class="date-time-wrapper">
-                <span class="date-cell">{{ order.date }}</span>
-                <span class="time-cell text-gray">{{ order.time }}</span>
+                <span class="date-cell">{{ order.created_at }}</span>
               </div>
             </td>
             <td class="cell-deal">{{ order.deal }}</td>
@@ -76,28 +89,83 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const orders = ref([
-  { id: 14, name: 'Дмитрий', phone: '+7 (904) 063-26-07', email: 'example@email.com', company: 'ООО "СОФТАРТ"', date: '01.01.2026', time: '00:00', deal: 1 },
-  { id: 13, name: 'Дмитрий', phone: '+7 (904) 063-26-07', email: 'example@email.com', company: 'ООО "СОФТАРТ"', date: '01.01.2026', time: '00:00', deal: 1 },
-  { id: 12, name: 'Дмитрий', phone: '+7 (904) 063-26-07', email: 'example@email.com', company: 'ООО "СОФТАРТ"', date: '01.01.2026', time: '00:00', deal: 1 },
-  { id: 11, name: 'Дмитрий', phone: '+7 (904) 063-26-07', email: 'example@email.com', company: 'ООО "СОФТАРТ"', date: '01.01.2026', time: '00:00', deal: 1 },
-  { id: 10, name: 'Дмитрий', phone: '+7 (904) 063-26-07', email: 'example@email.com', company: 'ООО "СОФТАРТ"', date: '01.01.2026', time: '00:00', deal: 1 },
-  { id: 9,  name: 'Дмитрий', phone: '+7 (904) 063-26-07', email: 'example@email.com', company: 'ООО "СОФТАРТ"', date: '01.01.2026', time: '00:00', deal: 1 },
-  { id: 8,  name: 'Дмитрий', phone: '+7 (904) 063-26-07', email: 'example@email.com', company: 'ООО "СОФТАРТ"', date: '01.01.2026', time: '00:00', deal: 1 },
-  { id: 7,  name: 'Дмитрий', phone: '+7 (904) 063-26-07', email: 'example@email.com', company: 'ООО "СОФТАРТ"', date: '01.01.2026', time: '00:00', deal: 1 },
-  { id: 6,  name: 'Дмитрий', phone: '+7 (904) 063-26-07', email: 'example@email.com', company: 'ООО "СОФТАРТ"', date: '01.01.2026', time: '00:00', deal: 1 },
-  { id: 5,  name: 'Дмитрий', phone: '+7 (904) 063-26-07', email: 'example@email.com', company: 'ООО "СОФТАРТ"', date: '01.01.2026', time: '00:00', deal: 1 },
-  { id: 4,  name: 'Дмитрий', phone: '+7 (904) 063-26-07', email: 'example@email.com', company: 'ООО "СОФТАРТ"', date: '01.01.2026', time: '00:00', deal: 1 },
-  { id: 3,  name: 'Дмитрий', phone: '+7 (904) 063-26-07', email: 'example@email.com', company: 'ООО "СОФТАРТ"', date: '01.01.2026', time: '00:00', deal: 1 },
-  { id: 2,  name: 'Дмитрий', phone: '+7 (904) 063-26-07', email: 'example@email.com', company: 'ООО "СОФТАРТ"', date: '01.01.2026', time: '00:00', deal: 1 },
-  { id: 1,  name: 'Дмитрий', phone: '+7 (904) 063-26-07', email: 'example@email.com', company: 'ООО "СОФТАРТ"', date: '01.01.2026', time: '00:00', deal: 1 }
+  { id: 156, name: 'Александр', phone: '+7 (916) 234-56-78', email: 'alex@mail.ru', company: 'ООО "ТехноСервис"', created_at: '15.03.2026', deal: 101 },
+  { id: 89, name: 'Мария', phone: '+7 (903) 123-45-67', email: 'maria@bk.ru', company: 'ЗАО "СтройИнвест"', created_at: '14.03.2026', deal: 87 },
+  { id: 234, name: 'Дмитрий', phone: '+7 (904) 063-26-07', email: 'dmitry@yandex.ru', company: 'ООО "СОФТАРТ"', created_at: '14.03.2026', deal: 234 },
+  { id: 45, name: 'Елена', phone: '+7 (909) 987-65-43', email: 'elena@mail.com', company: 'ИП "Петрова"', created_at: '13.03.2026', deal: 56 },
+  { id: 312, name: 'Игорь', phone: '+7 (917) 111-22-33', email: 'igor@bk.ru', company: 'ООО "АвтоПлюс"', created_at: '12.03.2026', deal: 312 },
+  { id: 67, name: 'Светлана', phone: '+7 (905) 444-55-66', email: 'svetlana@yandex.ru', company: 'ООО "Стоматология+"', created_at: '11.03.2026', deal: 45 },
+  { id: 189, name: 'Павел', phone: '+7 (910) 777-88-99', email: 'pavel@mail.ru', company: 'ЗАО "ЛогистикЦентр"', created_at: '10.03.2026', deal: 189 },
+  { id: 73, name: 'Анна', phone: '+7 (908) 555-66-77', email: 'anna@bk.ru', company: 'ООО "МаркетИнновации"', created_at: '09.03.2026', deal: 73 },
+  { id: 402, name: 'Сергей', phone: '+7 (912) 888-99-00', email: 'sergey@yandex.ru', company: 'ГК "АгроПром"', created_at: '08.03.2026', deal: 402 },
+  { id: 28, name: 'Ольга', phone: '+7 (906) 222-33-44', email: 'olga@mail.com', company: 'ООО "Ресторанная сеть"', created_at: '07.03.2026', deal: 28 },
+  { id: 61, name: 'Михаил', phone: '+7 (911) 333-44-55', email: 'mikhail@bk.ru', company: 'ЗАО "ИТ-Решения"', created_at: '06.03.2026', deal: 156 },
+  { id: 99, name: 'Татьяна', phone: '+7 (914) 666-77-88', email: 'tatiana@yandex.ru', company: 'ООО "ФитнесКлуб"', created_at: '05.03.2026', deal: 67 },
+  { id: 243, name: 'Виктор', phone: '+7 (913) 999-00-11', email: 'victor@mail.ru', company: 'Агентство "Недвижимость+"', created_at: '04.03.2026', deal: 243 },
+  { id: 504, name: 'Наталья', phone: '+7 (915) 777-66-55', email: 'natalia@bk.ru', company: 'ООО "Образовательные технологии"', created_at: '03.03.2026', deal: 504 },
+  { id: 38, name: 'Андрей', phone: '+7 (907) 444-33-22', email: 'andrey@yandex.ru', company: 'ООО "Гостиничная сеть"', created_at: '02.03.2026', deal: 38 },
+  { id: 92, name: 'Екатерина', phone: '+7 (916) 555-44-33', email: 'ekaterina@mail.com', company: 'ООО "Такси-Сервис"', created_at: '01.03.2026', deal: 92 },
+  { id: 178, name: 'Роман', phone: '+7 (918) 333-22-11', email: 'roman@bk.ru', company: 'Юридическая компания "Альфа"', created_at: '28.02.2026', deal: 178 },
+  { id: 5, name: 'Ирина', phone: '+7 (905) 111-00-99', email: 'irina@yandex.ru', company: 'ООО "Торговый Дом"', created_at: '27.02.2026', deal: 5 }
 ])
+
+// Состояние сортировки
+const sortKey = ref(null)
+const sortOrder = ref('asc')
+
+// Функция сортировки
+const sortBy = (key) => {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortKey.value = key
+    sortOrder.value = 'asc'
+  }
+}
+
+// Функция для парсинга даты из формата DD.MM.YYYY
+const parseDate = (str) => {
+  if (!str) return new Date(0)
+  const [day, month, year] = str.split('.').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+// Вычисляемое свойство с отсортированными данными
+const sortedOrders = computed(() => {
+  if (!sortKey.value) return orders.value
+
+  const sorted = [...orders.value].sort((a, b) => {
+    let aVal = a[sortKey.value]
+    let bVal = b[sortKey.value]
+
+    // Для числовых полей (id, deal)
+    if (typeof aVal === 'number' && typeof bVal === 'number') {
+      return aVal - bVal
+    }
+
+    // Для полей с датами
+    if (sortKey.value === 'created_at') {
+      return parseDate(aVal) - parseDate(bVal)
+    }
+
+    // Для строковых полей (регистронезависимое сравнение)
+    if (typeof aVal === 'string' && typeof bVal === 'string') {
+      return aVal.localeCompare(bVal, 'ru', { sensitivity: 'base' })
+    }
+
+    return 0
+  })
+
+  return sortOrder.value === 'asc' ? sorted : sorted.reverse()
+})
 </script>
 
 <style scoped>
 .orders-page {
+  width: 100%;
   font-family: system-ui, -apple-system, sans-serif;
   box-sizing: border-box;
 }
@@ -159,13 +227,29 @@ const orders = ref([
   text-align: left;
   font-size: 13px;
   color: #1a202c;
+  table-layout: fixed;
 }
+
+.orders-table th:nth-child(1) { width: 60px; }
+.orders-table th:nth-child(2) { width: 100px; }
+.orders-table th:nth-child(3) { width: 170px; }
+.orders-table th:nth-child(4) { width: 180px; }
+.orders-table th:nth-child(5) { width: 160px; }
+.orders-table th:nth-child(6) { width: 130px; }
+.orders-table th:nth-child(7) { width: 80px; }
 
 .orders-table th {
   font-weight: 600;
   color: #1a202c;
   padding: 12px 8px;
   white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease;
+}
+
+.orders-table th:hover {
+  background-color: #f7fafc;
 }
 
 .sort-icon {
@@ -173,27 +257,25 @@ const orders = ref([
   margin-left: 4px;
   color: #a0aec0;
   font-size: 11px;
+  transition: all 0.2s ease;
+}
+
+.sort-icon.active {
+  color: #3182ce;
+  font-weight: 700;
 }
 
 .orders-table td {
   padding: 14px 8px;
   vertical-align: middle;
-  word-break: break-word; /* Предотвращаем вылезание текста */
+  word-break: break-word;
 }
 
-/* Стилизация иконок внутри ячеек */
 .cell-id {
   color: #718096;
 }
 
-/* Центрируем иконку и текст БЕЗ разрушения самой ячейки таблицы */
 .cell-phone, .cell-email {
-  white-space: nowrap;
-}
-
-/* Создаем мини-флекс обертку вокруг содержимого, а не самой ячейки */
-.cell-phone, .cell-email {
-  /* Заменяем display: flex у td на инлайн-флекс центрирование текста */
   line-height: 1;
 }
 
@@ -223,5 +305,5 @@ const orders = ref([
 .orders-table th:last-child {
   text-align: center;
 }
-</style>
 
+</style>

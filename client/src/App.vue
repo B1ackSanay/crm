@@ -1,30 +1,36 @@
-<!-- я пидар -->
 <template>
+  <div class="app-layout">
+    <!-- Если не авторизован — показываем экран входа -->
+    <LoginScreen v-if="!isAuthenticated" @login-success="handleLoginSuccess" />
 
-  <LoginScreen v-if="!user" @login-success="onLogin" />
+    <!-- Если авторизован — показываем основное приложение -->
+    <template v-else>
+      <Header @navigate="handleNavigate" />
 
-  <div v-else class="app-layout">
-    <Header :user="user" @logout="onLogout" />
-    <div class="app-body">
-      <Sidebar :pages="pages" @navigate="handleNavigate" />
-      <main class="page-content">
-        <component v-if="currentComponent" :is="currentComponent" />
-        <p v-else>Нет доступных разделов</p>
-      </main>
-    </div>
+      <div class="app-body">
+        <Sidebar @navigate="handleNavigate" />
+        
+        <main class="page-content">
+          <component :is="currentComponent" />
+        </main>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, shallowRef, onMounted } from 'vue';
-import LoginScreen from './components/LoginScreen.vue';
+import { ref, shallowRef } from 'vue';
 import Header from './components/Header.vue';
 import Sidebar from './components/Sidebar.vue';
+import LoginScreen from './components/LoginScreen.vue';
 import Calls from './components/Calls.vue';
 import Deals from './components/Deals.vue';
 import OrderPage from './components/OrderPage.vue';
 import Roles from './components/Roles.vue';
 import Schedule from './components/Schedule.vue';
+
+// Состояние авторизации
+const isAuthenticated = ref(false);
 
 const componentMap = {
   'Заявки': OrderPage,
@@ -35,49 +41,60 @@ const componentMap = {
   'Звонки': Calls
 };
 
-const user = ref(null);
-const pages = ref([]);
-const currentComponent = shallowRef(null);
+// По умолчанию показываем компонент Заявки (OrderPage)
+const currentComponent = shallowRef(OrderPage);
 
-function setDefaultPage(pagesList) {
-  const firstPage = pagesList[0];
-  currentComponent.value = firstPage ? componentMap[firstPage] : null;
-}
-
-function handleNavigate(page) {
+const handleNavigate = (page) => {
   const component = componentMap[page];
-  if (component) currentComponent.value = component;
-}
+  if (component) {
+    currentComponent.value = component;
+  }
+};
 
-function onLogin(data) {
-  user.value = data.user;
-  pages.value = data.pages || [];
-  setDefaultPage(pages.value);
-}
-
-async function onLogout() {
-  await fetch('/api/logout', { method: 'POST' });
-  user.value = null;
-  pages.value = [];
-  currentComponent.value = null;
-}
-
-onMounted(async () => {
-  const res = await fetch('/api/session');
-  const data = await res.json();
-  user.value = data.user;
-  pages.value = data.pages || [];
-  if (user.value) setDefaultPage(pages.value);
-});
+// Обработчик успешного входа
+const handleLoginSuccess = (data) => {
+  isAuthenticated.value = true;
+  console.log('Успешный вход:', data);
+};
 </script>
 
-<style scoped>
-.app-body {
-  margin-top: 13px;
-  display: flex;
-}
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 
-.page-content {
-  padding: 0 50px;
-}
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background-color: #f4f7f6;
+    font-family: system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+  }
+
+  .app-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    height: 100%;
+  }
+
+  .app-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    height: calc(100vh - 70px);
+  }
+
+  .page-content {
+    flex: 1;
+    padding: 24px;
+    box-sizing: border-box;
+    overflow-y: auto;
+  }
 </style>
