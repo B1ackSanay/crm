@@ -83,7 +83,6 @@ const toggleMenu = (menu) => {
   padding: 0;
   box-sizing: border-box;
   flex-shrink: 0;
-  /* Растягиваем на всю высоту родителя */
   align-self: stretch;
   height: auto;
   min-height: calc(100vh - 13px - 10px - 56px);

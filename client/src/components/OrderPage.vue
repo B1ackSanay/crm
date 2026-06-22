@@ -2,85 +2,107 @@
   <div class="orders-page">
     <h1 class="page-title">Заявки</h1>
 
-    <!-- 1. Карточки аналитики (Статистика) -->
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-period">Сегодня</div>
-        <div class="stat-value">12</div>
-        <div class="stat-footer text-gray">+3 к прошлому периоду</div>
+        <div class="stat-value">{{ stats.today }}</div>
+        <div class="stat-footer text-gray">заявок за сегодня</div>
       </div>
-      
       <div class="stat-card">
         <div class="stat-period">За 7 дней</div>
-        <div class="stat-value">48</div>
-        <div class="stat-footer text-gray">+8 к прошлому периоду</div>
+        <div class="stat-value">{{ stats.week }}</div>
+        <div class="stat-footer text-gray">заявок за неделю</div>
       </div>
-      
       <div class="stat-card">
         <div class="stat-period">За 30 дней</div>
-        <div class="stat-value">156</div>
-        <div class="stat-footer text-gray">+24 к прошлому периоду</div>
+        <div class="stat-value">{{ stats.month }}</div>
+        <div class="stat-footer text-gray">заявок за месяц</div>
       </div>
-      
       <div class="stat-card">
         <div class="stat-period">Конверсия</div>
-        <div class="stat-value">32%</div>
-        <div class="stat-footer text-gray">+5% к прошлому периоду</div>
+        <div class="stat-value">{{ stats.conversion }}%</div>
+        <div class="stat-footer text-gray">закрытых заявок</div>
       </div>
     </div>
 
-    <!-- 2. Таблица заявок -->
+    <div class="filters-bar">
+      <input
+        v-model="search"
+        type="text"
+        class="filter-input filter-search"
+        placeholder="Поиск по имени, телефону, email..."
+      />
+      <select v-model="filterStatus" class="filter-input">
+        <option value="">Все статусы</option>
+        <option value="новая">Новая</option>
+        <option value="в работе">В работе</option>
+        <option value="закрыта">Закрыта</option>
+      </select>
+      <input
+        v-model="filterCompany"
+        type="text"
+        class="filter-input"
+        placeholder="Компания..."
+      />
+      <input
+        v-model="filterDateFrom"
+        type="date"
+        class="filter-input"
+        title="Дата от"
+      />
+      <input
+        v-model="filterDateTo"
+        type="date"
+        class="filter-input"
+        title="Дата до"
+      />
+      <button v-if="hasFilters" class="filter-reset" @click="resetFilters">Сбросить</button>
+    </div>
+
     <div class="table-container">
       <table class="orders-table">
         <thead>
           <tr>
-            <th @click="sortBy('id')">
-              ID <span class="sort-icon" :class="{ active: sortKey === 'id' }">{{ sortKey === 'id' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
-            </th>
-            <th @click="sortBy('name')">
-              Имя <span class="sort-icon" :class="{ active: sortKey === 'name' }">{{ sortKey === 'name' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
-            </th>
-            <th @click="sortBy('phone')">
-              Телефон <span class="sort-icon" :class="{ active: sortKey === 'phone' }">{{ sortKey === 'phone' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
-            </th>
-            <th @click="sortBy('email')">
-              Email <span class="sort-icon" :class="{ active: sortKey === 'email' }">{{ sortKey === 'email' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
-            </th>
-            <th @click="sortBy('company')">
-              Компания <span class="sort-icon" :class="{ active: sortKey === 'company' }">{{ sortKey === 'company' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
-            </th>
-            <th @click="sortBy('created_at')">
-              Дата создания <span class="sort-icon" :class="{ active: sortKey === 'created_at' }">{{ sortKey === 'created_at' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
-            </th>
-            <th @click="sortBy('deal')">
-              Сделка <span class="sort-icon" :class="{ active: sortKey === 'deal' }">{{ sortKey === 'deal' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
-            </th>
+            <th @click="sortBy('id')">ID <span class="sort-icon" :class="{ active: sortKey === 'id' }">{{ sortKey === 'id' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
+            <th @click="sortBy('name')">Имя <span class="sort-icon" :class="{ active: sortKey === 'name' }">{{ sortKey === 'name' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
+            <th @click="sortBy('phone')">Телефон <span class="sort-icon" :class="{ active: sortKey === 'phone' }">{{ sortKey === 'phone' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
+            <th @click="sortBy('email')">Email <span class="sort-icon" :class="{ active: sortKey === 'email' }">{{ sortKey === 'email' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
+            <th @click="sortBy('company')">Компания <span class="sort-icon" :class="{ active: sortKey === 'company' }">{{ sortKey === 'company' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
+            <th @click="sortBy('created_at')">Дата <span class="sort-icon" :class="{ active: sortKey === 'created_at' }">{{ sortKey === 'created_at' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
+            <th @click="sortBy('time')">Время <span class="sort-icon" :class="{ active: sortKey === 'time' }">{{ sortKey === 'time' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
+            <th @click="sortBy('status')">Статус <span class="sort-icon" :class="{ active: sortKey === 'status' }">{{ sortKey === 'status' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
+            <th @click="sortBy('deal')">Сделка <span class="sort-icon" :class="{ active: sortKey === 'deal' }">{{ sortKey === 'deal' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="order in sortedOrders" :key="order.id">
+          <tr v-if="filteredAndSorted.length === 0">
+            <td colspan="9" class="no-results">Ничего не найдено</td>
+          </tr>
+          <tr v-for="order in filteredAndSorted" :key="order.id">
             <td class="cell-id">{{ order.id }}</td>
             <td>{{ order.name }}</td>
             <td class="cell-phone">
-              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
               </svg>
               {{ order.phone }}
             </td>
             <td class="cell-email">
-              <svg class="icon icon-email" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="4" width="20" height="16" rx="2"/>
                 <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
               </svg>
               {{ order.email }}
             </td>
             <td>{{ order.company }}</td>
+            <td>{{ order.created_at }}</td>
+            <td class="cell-time">{{ order.time }}</td>
             <td>
-              <div class="date-time-wrapper">
-                <span class="date-cell">{{ order.created_at }}</span>
-              </div>
+              <span class="status-badge" :class="'status-' + order.status?.replace(' ', '-')">
+                {{ order.status }}
+              </span>
             </td>
-            <td class="cell-deal">{{ order.deal }}</td>
+            <td class="cell-deal">{{ order.deal || '—' }}</td>
           </tr>
         </tbody>
       </table>
@@ -92,16 +114,112 @@
 import { ref, computed, onMounted } from 'vue'
 
 const orders = ref([])
+
 onMounted(async () => {
   const res = await fetch('/api/orders')
   orders.value = await res.json()
 })
 
-// Состояние сортировки
+const search = ref('')
+const filterStatus = ref('')
+const filterCompany = ref('')
+const filterDateFrom = ref('')
+const filterDateTo = ref('')
+
 const sortKey = ref(null)
 const sortOrder = ref('asc')
 
-// Функция сортировки
+const hasFilters = computed(() =>
+  search.value || filterStatus.value || filterCompany.value || filterDateFrom.value || filterDateTo.value
+)
+
+function resetFilters() {
+  search.value = ''
+  filterStatus.value = ''
+  filterCompany.value = ''
+  filterDateFrom.value = ''
+  filterDateTo.value = ''
+}
+
+const parseDate = (str) => {
+  if (!str) return new Date(0)
+  const [day, month, year] = str.split('.').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+const today = new Date()
+today.setHours(0, 0, 0, 0)
+
+const stats = computed(() => {
+  const total = orders.value.length
+  const closed = orders.value.filter(o => o.status === 'закрыта').length
+
+  const todayCount = orders.value.filter(o => {
+    const d = parseDate(o.created_at)
+    return d >= today
+  }).length
+
+  const weekAgo = new Date(today)
+  weekAgo.setDate(weekAgo.getDate() - 7)
+  const weekCount = orders.value.filter(o => parseDate(o.created_at) >= weekAgo).length
+
+  const monthAgo = new Date(today)
+  monthAgo.setDate(monthAgo.getDate() - 30)
+  const monthCount = orders.value.filter(o => parseDate(o.created_at) >= monthAgo).length
+
+  const conversion = total > 0 ? Math.round((closed / total) * 100) : 0
+
+  return { today: todayCount, week: weekCount, month: monthCount, conversion }
+})
+
+const filteredAndSorted = computed(() => {
+  let result = orders.value
+
+  if (search.value) {
+    const q = search.value.toLowerCase()
+    result = result.filter(o =>
+      o.name?.toLowerCase().includes(q) ||
+      o.phone?.toLowerCase().includes(q) ||
+      o.email?.toLowerCase().includes(q)
+    )
+  }
+
+  if (filterStatus.value) {
+    result = result.filter(o => o.status === filterStatus.value)
+  }
+
+  if (filterCompany.value) {
+    const q = filterCompany.value.toLowerCase()
+    result = result.filter(o => o.company?.toLowerCase().includes(q))
+  }
+
+  if (filterDateFrom.value) {
+    const from = new Date(filterDateFrom.value)
+    result = result.filter(o => parseDate(o.created_at) >= from)
+  }
+
+  if (filterDateTo.value) {
+    const to = new Date(filterDateTo.value)
+    result = result.filter(o => parseDate(o.created_at) <= to)
+  }
+
+  if (!sortKey.value) return result
+
+  const sorted = [...result].sort((a, b) => {
+    let aVal = a[sortKey.value]
+    let bVal = b[sortKey.value]
+
+    if (typeof aVal === 'number' && typeof bVal === 'number') return aVal - bVal
+    if (sortKey.value === 'created_at') return parseDate(aVal) - parseDate(bVal)
+    if (typeof aVal === 'string' && typeof bVal === 'string') {
+      return aVal.localeCompare(bVal, 'ru', { sensitivity: 'base' })
+    }
+    return 0
+  })
+
+  return sortOrder.value === 'asc' ? sorted : sorted.reverse()
+})
+
 const sortBy = (key) => {
   if (sortKey.value === key) {
     sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
@@ -110,42 +228,6 @@ const sortBy = (key) => {
     sortOrder.value = 'asc'
   }
 }
-
-// Функция для парсинга даты из формата DD.MM.YYYY
-const parseDate = (str) => {
-  if (!str) return new Date(0)
-  const [day, month, year] = str.split('.').map(Number)
-  return new Date(year, month - 1, day)
-}
-
-// Вычисляемое свойство с отсортированными данными
-const sortedOrders = computed(() => {
-  if (!sortKey.value) return orders.value
-
-  const sorted = [...orders.value].sort((a, b) => {
-    let aVal = a[sortKey.value]
-    let bVal = b[sortKey.value]
-
-    // Для числовых полей (id, deal)
-    if (typeof aVal === 'number' && typeof bVal === 'number') {
-      return aVal - bVal
-    }
-
-    // Для полей с датами
-    if (sortKey.value === 'created_at') {
-      return parseDate(aVal) - parseDate(bVal)
-    }
-
-    // Для строковых полей (регистронезависимое сравнение)
-    if (typeof aVal === 'string' && typeof bVal === 'string') {
-      return aVal.localeCompare(bVal, 'ru', { sensitivity: 'base' })
-    }
-
-    return 0
-  })
-
-  return sortOrder.value === 'asc' ? sorted : sorted.reverse()
-})
 </script>
 
 <style scoped>
@@ -163,12 +245,11 @@ const sortedOrders = computed(() => {
   margin-bottom: 24px;
 }
 
-/* Сетка карточек аналитики */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .stat-card {
@@ -200,7 +281,50 @@ const sortedOrders = computed(() => {
   color: #718096;
 }
 
-/* Стили таблицы */
+.filters-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-input {
+  height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  outline: none;
+  background-color: #ffffff;
+  color: #1a202c;
+  transition: border-color 0.15s;
+}
+
+.filter-input:focus {
+  border-color: #3182ce;
+}
+
+.filter-search {
+  width: 260px;
+}
+
+.filter-reset {
+  height: 34px;
+  padding: 0 14px;
+  font-size: 13px;
+  background-color: #edf2f7;
+  color: #4a5568;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.filter-reset:hover {
+  background-color: #e2e8f0;
+}
+
 .table-container {
   width: 100%;
   overflow-x: auto;
@@ -212,16 +336,7 @@ const sortedOrders = computed(() => {
   text-align: left;
   font-size: 13px;
   color: #1a202c;
-  table-layout: fixed;
 }
-
-.orders-table th:nth-child(1) { width: 60px; }
-.orders-table th:nth-child(2) { width: 100px; }
-.orders-table th:nth-child(3) { width: 170px; }
-.orders-table th:nth-child(4) { width: 180px; }
-.orders-table th:nth-child(5) { width: 160px; }
-.orders-table th:nth-child(6) { width: 130px; }
-.orders-table th:nth-child(7) { width: 80px; }
 
 .orders-table th {
   font-weight: 600;
@@ -230,7 +345,6 @@ const sortedOrders = computed(() => {
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
-  transition: background-color 0.15s ease;
 }
 
 .orders-table th:hover {
@@ -242,7 +356,6 @@ const sortedOrders = computed(() => {
   margin-left: 4px;
   color: #a0aec0;
   font-size: 11px;
-  transition: all 0.2s ease;
 }
 
 .sort-icon.active {
@@ -253,7 +366,6 @@ const sortedOrders = computed(() => {
 .orders-table td {
   padding: 14px 8px;
   vertical-align: middle;
-  word-break: break-word;
 }
 
 .cell-id {
@@ -261,26 +373,21 @@ const sortedOrders = computed(() => {
 }
 
 .cell-phone, .cell-email {
-  line-height: 1;
+  white-space: nowrap;
 }
 
 .cell-phone svg, .cell-email svg {
   display: inline-block;
   vertical-align: middle;
-  margin-right: 8px;
+  margin-right: 6px;
   width: 14px;
   height: 14px;
   color: #4a5568;
 }
 
-.date-time-wrapper {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.time-cell {
-  font-size: 12px;
+.cell-time {
+  color: #718096;
+  white-space: nowrap;
 }
 
 .cell-deal {
@@ -291,4 +398,33 @@ const sortedOrders = computed(() => {
   text-align: center;
 }
 
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.status-новая {
+  background-color: #ebf8ff;
+  color: #2b6cb0;
+}
+
+.status-в-работе {
+  background-color: #fefce8;
+  color: #92400e;
+}
+
+.status-закрыта {
+  background-color: #f0fff4;
+  color: #276749;
+}
+
+.no-results {
+  text-align: center;
+  color: #718096;
+  padding: 32px;
+}
 </style>

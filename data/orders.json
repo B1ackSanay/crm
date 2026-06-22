@@ -1,4 +1,8 @@
 [
-  { "id": 1, "name": "Дмитрий", "phone": "+7 (904) 063-26-07", "email": "example@email.com", "company": "ООО \"СОФТАРТ\"", "created_at": "01.01.2026", "deal": 1 },
-  { "id": 2, "name": "Анна", "phone": "+7 (916) 234-56-78", "email": "anna@email.com", "company": "ООО \"ВЕКТОР\"", "created_at": "03.01.2026", "deal": 2 }
+  { "id": 1, "name": "Дмитрий", "phone": "+7 (904) 063-26-07", "email": "example@email.com", "company": "ООО \"СОФТАРТ\"", "created_at": "22.06.2026", "time": "09:14", "deal": 1, "status": "новая" },
+  { "id": 2, "name": "Анна", "phone": "+7 (916) 234-56-78", "email": "anna@email.com", "company": "ООО \"ВЕКТОР\"", "created_at": "22.06.2026", "time": "11:32", "deal": 2, "status": "в работе" },
+  { "id": 3, "name": "Сергей", "phone": "+7 (903) 111-22-33", "email": "sergey@mail.ru", "company": "ИП Сергеев", "created_at": "21.06.2026", "time": "14:05", "deal": 0, "status": "закрыта" },
+  { "id": 4, "name": "Мария", "phone": "+7 (925) 444-55-66", "email": "maria@corp.ru", "company": "ООО \"АЛЬФА\"", "created_at": "20.06.2026", "time": "10:20", "deal": 3, "status": "закрыта" },
+  { "id": 5, "name": "Иван", "phone": "+7 (999) 777-88-99", "email": "ivan@beta.ru", "company": "ООО \"БЕТА\"", "created_at": "15.06.2026", "time": "16:45", "deal": 0, "status": "новая" },
+  { "id": 6, "name": "Ольга", "phone": "+7 (912) 333-44-55", "email": "olga@firm.ru", "company": "ЗАО \"ГАММА\"", "created_at": "10.06.2026", "time": "08:30", "deal": 4, "status": "закрыта" }
 ]

@@ -111,6 +111,7 @@ onMounted(async () => {
   .page-content {
     flex: 1;
     padding: 24px;
+    height: 100%;
     box-sizing: border-box;
     overflow-y: auto;
   }
