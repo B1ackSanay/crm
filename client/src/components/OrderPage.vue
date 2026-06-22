@@ -71,7 +71,6 @@
             <th @click="sortBy('created_at')">Дата <span class="sort-icon" :class="{ active: sortKey === 'created_at' }">{{ sortKey === 'created_at' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
             <th @click="sortBy('time')">Время <span class="sort-icon" :class="{ active: sortKey === 'time' }">{{ sortKey === 'time' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
             <th @click="sortBy('status')">Статус <span class="sort-icon" :class="{ active: sortKey === 'status' }">{{ sortKey === 'status' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
-            <th @click="sortBy('deal')">Сделка <span class="sort-icon" :class="{ active: sortKey === 'deal' }">{{ sortKey === 'deal' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
           </tr>
         </thead>
         <tbody>
@@ -102,7 +101,6 @@
                 {{ order.status }}
               </span>
             </td>
-            <td class="cell-deal">{{ order.deal || '—' }}</td>
           </tr>
         </tbody>
       </table>
@@ -388,10 +386,6 @@ const sortBy = (key) => {
 .cell-time {
   color: #718096;
   white-space: nowrap;
-}
-
-.cell-deal {
-  text-align: center;
 }
 
 .orders-table th:last-child {
