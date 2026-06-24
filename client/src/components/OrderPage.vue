@@ -421,4 +421,8 @@ const sortBy = (key) => {
   color: #718096;
   padding: 32px;
 }
+
+.th {
+  justify-content: left;
+}
 </style>

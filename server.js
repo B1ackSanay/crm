@@ -3,10 +3,14 @@ const session = require('express-session');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
+const cors = require('cors');
 
 const app = express();
+app.use(cors({
+  origin: 'https://b1acksanay.github.io/lending/',
+  credentials: true
+}));
 const PORT = 8000;
-
 const ALL_PAGES = ['Заявки', 'Расписание', 'Роли и права', 'Конфигурация', 'Сделки', 'Звонки'];
 
 app.use(bodyParser.json());
@@ -19,6 +23,7 @@ app.use(session({
   saveUninitialized: true,
   cookie: {
     secure: process.env.NODE_ENV !== 'development',
+    sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000
   }
 }));
@@ -32,7 +37,6 @@ app.get('/', (req, res) => {
 function getOrders() {
   return JSON.parse(fs.readFileSync(path.join(__dirname, 'data/orders.json'), 'utf8'));
 }
-
 function getUsers() {
   return JSON.parse(fs.readFileSync(path.join(__dirname, 'data/users.json'), 'utf8'));
 }
