@@ -23,7 +23,7 @@ app.use(session({
   saveUninitialized: true,
   cookie: {
     secure: process.env.NODE_ENV !== 'development',
-    sameSite: 'none',
+    sameSite: process.env.NODE_ENV !== 'development' ? 'none' : 'lax',
     maxAge: 24 * 60 * 60 * 1000
   }
 }));
@@ -143,6 +143,43 @@ app.post('/api/roles', requirePageAccess('Роли и права'), (req, res) =
   saveRoles(roles);
 
   res.json({ success: true, roles: excludeTechAdmin(roles), pages: ALL_PAGES });
+});
+
+app.post('/api/request', (req, res) => {
+  const { name, phone, email, company, date, message } = req.body;
+
+  if (!name || !phone || !company) {
+    return res.status(400).json({ message: 'Заполните обязательные поля' });
+  }
+
+  const ordersPath = path.join(__dirname, 'data/orders.json');
+  const orders = JSON.parse(fs.readFileSync(ordersPath, 'utf8'));
+
+  const now = new Date();
+  const created_at = now.toLocaleDateString('ru-RU', {
+    day: '2-digit', month: '2-digit', year: 'numeric'
+  });
+  const time = now.toLocaleTimeString('ru-RU', {
+    hour: '2-digit', minute: '2-digit'
+  });
+
+  const newOrder = {
+    id: orders.length > 0 ? Math.max(...orders.map(o => o.id)) + 1 : 1,
+    name: name.trim(),
+    phone: phone.trim(),
+    email: email.trim(),
+    company: company.trim(),
+    date: date || '',
+    message: message || '',
+    created_at,
+    time,
+    status: 'новая'
+  };
+
+  orders.push(newOrder);
+  fs.writeFileSync(ordersPath, JSON.stringify(orders, null, 2), 'utf8');
+
+  res.json({ success: true });
 });
 
 app.put('/api/roles/:key', requirePageAccess('Роли и права'), (req, res) => {

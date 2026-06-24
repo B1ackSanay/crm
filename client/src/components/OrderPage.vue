@@ -70,12 +70,13 @@
             <th @click="sortBy('company')">Компания <span class="sort-icon" :class="{ active: sortKey === 'company' }">{{ sortKey === 'company' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
             <th @click="sortBy('created_at')">Дата <span class="sort-icon" :class="{ active: sortKey === 'created_at' }">{{ sortKey === 'created_at' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
             <th @click="sortBy('time')">Время <span class="sort-icon" :class="{ active: sortKey === 'time' }">{{ sortKey === 'time' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
+            <th @click="sortBy('message')">Комментарий <span class="sort-icon" :class="{ active: sortKey === 'message' }">{{ sortKey === 'message' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
             <th @click="sortBy('status')">Статус <span class="sort-icon" :class="{ active: sortKey === 'status' }">{{ sortKey === 'status' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="filteredAndSorted.length === 0">
-            <td colspan="9" class="no-results">Ничего не найдено</td>
+            <td colspan="10" class="no-results">Ничего не найдено</td>
           </tr>
           <tr v-for="order in filteredAndSorted" :key="order.id">
             <td class="cell-id">{{ order.id }}</td>
@@ -96,6 +97,7 @@
             <td>{{ order.company }}</td>
             <td>{{ order.created_at }}</td>
             <td class="cell-time">{{ order.time }}</td>
+            <td class="cell-message">{{ order.message || '—' }}</td>
             <td>
               <span class="status-badge" :class="'status-' + order.status?.replace(' ', '-')">
                 {{ order.status }}
@@ -390,6 +392,14 @@ const sortBy = (key) => {
 
 .orders-table th:last-child {
   text-align: center;
+}
+
+.cell-message {
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #4a5568;
 }
 
 .status-badge {
