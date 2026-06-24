@@ -7,7 +7,7 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors({
-  origin: 'https://b1acksanay.github.io/lending/',
+  origin: 'https://b1acksanay.github.io',
   credentials: true
 }));
 const PORT = 8000;
