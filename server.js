@@ -258,6 +258,6 @@ app.post('/api/logout', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`
-    ad http://localhost:${PORT}
+    http://localhost:${PORT}
 `);
 });
