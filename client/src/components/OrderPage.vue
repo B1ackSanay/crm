@@ -76,7 +76,7 @@
         </thead>
         <tbody>
           <tr v-if="filteredAndSorted.length === 0">
-            <td colspan="9" class="no-results">Ничего не найдено</td>
+            <td colspan="10" class="no-results">Ничего не найдено</td>
           </tr>
           <tr v-for="order in filteredAndSorted" :key="order.id">
             <td class="cell-id">{{ order.id }}</td>

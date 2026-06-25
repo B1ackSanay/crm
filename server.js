@@ -37,37 +37,19 @@ app.get('/', (req, res) => {
 function getOrders() {
   return JSON.parse(fs.readFileSync(path.join(__dirname, 'data/orders.json'), 'utf8'));
 }
-
 function getUsers() {
   return JSON.parse(fs.readFileSync(path.join(__dirname, 'data/users.json'), 'utf8'));
 }
-
 function getRoles() {
   return JSON.parse(fs.readFileSync(path.join(__dirname, 'data/roles.json'), 'utf8'));
 }
-
 function saveRoles(roles) {
   fs.writeFileSync(path.join(__dirname, 'data/roles.json'), JSON.stringify(roles, null, 2), 'utf8');
 }
-
-function getDeals() {
-  try {
-    const data = fs.readFileSync(path.join(__dirname, 'data/deals.json'), 'utf8');
-    return JSON.parse(data);
-  } catch {
-    return [];
-  }
-}
-
-function saveDeals(deals) {
-  fs.writeFileSync(path.join(__dirname, 'data/deals.json'), JSON.stringify(deals, null, 2), 'utf8');
-}
-
 function excludeTechAdmin(roles) {
   const { tech_admin, ...rest } = roles;
   return rest;
 }
-
 function requirePageAccess(pageName) {
   return (req, res, next) => {
     if (!req.session.user) {
@@ -84,32 +66,6 @@ function requirePageAccess(pageName) {
     next();
   };
 }
-
-// Инициализация сделок при старте сервера
-function initializeDeals() {
-  const deals = getDeals();
-  if (deals.length === 0) {
-    const orders = getOrders();
-    if (orders.length > 0) {
-      const newDeals = orders.map((order) => ({
-        id: order.id,
-        order_id: order.id,
-        title: order.company || 'Без названия',
-        client: order.name || 'Не указан',
-        phone: order.phone || '',
-        email: order.email || '',
-        amount: 0,
-        status: order.status === 'закрыта' ? 'Завершена' : 'Активна',
-        created_at: order.created_at
-      }));
-      saveDeals(newDeals);
-      console.log(`✅ Создано ${newDeals.length} сделок из заявок`);
-    }
-  }
-}
-
-// Запускаем инициализацию
-initializeDeals();
 
 app.post('/api/login', (req, res) => {
   const { login, password } = req.body;
@@ -157,60 +113,6 @@ app.get('/api/session', (req, res) => {
 
 app.get('/api/orders', requirePageAccess('Заявки'), (req, res) => {
   res.json(getOrders());
-});
-
-app.patch('/api/orders/:id/status', requirePageAccess('Заявки'), (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
-  
-  if (!['новая', 'в работе', 'закрыта'].includes(status)) {
-    return res.status(400).json({ error: 'Некорректный статус' });
-  }
-
-  const orders = getOrders();
-  const order = orders.find(o => o.id === parseInt(id));
-  
-  if (!order) {
-    return res.status(404).json({ error: 'Заявка не найдена' });
-  }
-
-  order.status = status;
-  fs.writeFileSync(path.join(__dirname, 'data/orders.json'), JSON.stringify(orders, null, 2), 'utf8');
-  
-  // Обновляем статус в сделке
-  const deals = getDeals();
-  const deal = deals.find(d => d.order_id === order.id);
-  if (deal) {
-    deal.status = status === 'закрыта' ? 'Завершена' : 'Активна';
-    saveDeals(deals);
-  }
-  
-  res.json({ success: true });
-});
-
-app.get('/api/deals', requirePageAccess('Сделки'), (req, res) => {
-  const deals = getDeals();
-  res.json(deals);
-});
-
-app.patch('/api/deals/:id/amount', requirePageAccess('Сделки'), (req, res) => {
-  const { id } = req.params;
-  const { amount } = req.body;
-  
-  if (amount === undefined || amount === null) {
-    return res.status(400).json({ error: 'Сумма обязательна' });
-  }
-
-  const deals = getDeals();
-  const deal = deals.find(d => d.id === parseInt(id));
-  
-  if (!deal) {
-    return res.status(404).json({ error: 'Сделка не найдена' });
-  }
-
-  deal.amount = Number(amount);
-  saveDeals(deals);
-  res.json({ success: true });
 });
 
 app.get('/api/roles', requirePageAccess('Роли и права'), (req, res) => {
@@ -277,22 +179,6 @@ app.post('/api/request', (req, res) => {
   orders.push(newOrder);
   fs.writeFileSync(ordersPath, JSON.stringify(orders, null, 2), 'utf8');
 
-  // Создаем сделку
-  const deals = getDeals();
-  const newDeal = {
-    id: deals.length > 0 ? Math.max(...deals.map(d => d.id)) + 1 : 1,
-    order_id: newOrder.id,
-    title: newOrder.company || 'Без названия',
-    client: newOrder.name || 'Не указан',
-    phone: newOrder.phone || '',
-    email: newOrder.email || '',
-    amount: 0,
-    status: newOrder.status === 'закрыта' ? 'Завершена' : 'Активна',
-    created_at: newOrder.created_at
-  };
-  deals.push(newDeal);
-  saveDeals(deals);
-
   res.json({ success: true });
 });
 
@@ -340,6 +226,27 @@ app.delete('/api/roles/:key', requirePageAccess('Роли и права'), (req,
   res.json({ success: true, roles: excludeTechAdmin(roles), pages: ALL_PAGES });
 });
 
+app.patch('/api/orders/:id/status', requirePageAccess('Заявки'), (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  
+  if (!['новая', 'в работе', 'закрыта'].includes(status)) {
+    return res.status(400).json({ error: 'Некорректный статус' });
+  }
+
+  const orders = getOrders();
+  const order = orders.find(o => o.id === parseInt(id));
+  
+  if (!order) {
+    return res.status(404).json({ error: 'Заявка не найдена' });
+  }
+
+  order.status = status;
+  fs.writeFileSync(path.join(__dirname, 'data/orders.json'), JSON.stringify(orders, null, 2), 'utf8');
+  res.json({ success: true });
+});
+
+
 app.post('/api/logout', (req, res) => {
   req.session.destroy((err) => {
     if (err) {
@@ -350,5 +257,7 @@ app.post('/api/logout', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Сервер запущен на http://localhost:${PORT}`);
+  console.log(`
+    http://localhost:${PORT}
+`);
 });

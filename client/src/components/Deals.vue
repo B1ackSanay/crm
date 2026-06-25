@@ -12,53 +12,36 @@
             <th @click="sortBy('title')">
               Название <span class="sort-icon" :class="{ active: sortKey === 'title' }">{{ sortKey === 'title' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
             </th>
-            <th @click="sortBy('client')">
-              Клиент <span class="sort-icon" :class="{ active: sortKey === 'client' }">{{ sortKey === 'client' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
-            </th>
-            <th @click="sortBy('phone')">
-              Телефон <span class="sort-icon" :class="{ active: sortKey === 'phone' }">{{ sortKey === 'phone' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
-            </th>
-            <th @click="sortBy('email')">
-              Email <span class="sort-icon" :class="{ active: sortKey === 'email' }">{{ sortKey === 'email' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
-            </th>
             <th @click="sortBy('amount')">
               Сумма <span class="sort-icon" :class="{ active: sortKey === 'amount' }">{{ sortKey === 'amount' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
             </th>
             <th @click="sortBy('status')">
               Статус <span class="sort-icon" :class="{ active: sortKey === 'status' }">{{ sortKey === 'status' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
             </th>
+            <th @click="sortBy('stage')">
+              Этап <span class="sort-icon" :class="{ active: sortKey === 'stage' }">{{ sortKey === 'stage' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
+            </th>
+            <th @click="sortBy('manager')">
+              Ответственный <span class="sort-icon" :class="{ active: sortKey === 'manager' }">{{ sortKey === 'manager' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
+            </th>
             <th @click="sortBy('created_at')">
               Дата создания <span class="sort-icon" :class="{ active: sortKey === 'created_at' }">{{ sortKey === 'created_at' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
+            </th>
+            <th @click="sortBy('closed_at')">
+              Дата закрытия <span class="sort-icon" :class="{ active: sortKey === 'closed_at' }">{{ sortKey === 'closed_at' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span>
             </th>
           </tr>
         </thead>
         <tbody>
-          <tr v-if="deals.length === 0">
-            <td colspan="8" class="no-results">Нет сделок</td>
-          </tr>
           <tr v-for="deal in sortedDeals" :key="deal.id">
             <td class="cell-id">{{ deal.id }}</td>
             <td class="cell-title">{{ deal.title }}</td>
-            <td>{{ deal.client }}</td>
-            <td class="cell-phone">{{ deal.phone }}</td>
-            <td class="cell-email">{{ deal.email }}</td>
-            <td class="cell-amount">
-              <input 
-                v-model="deal.amount" 
-                @change="updateAmount(deal)"
-                type="number"
-                min="0"
-                step="1000"
-                class="amount-input"
-              />
-              <span class="currency">₽</span>
-            </td>
-            <td>
-              <span :class="['status-badge', deal.status === 'Завершена' ? 'status-closed' : 'status-active']">
-                {{ deal.status }}
-              </span>
-            </td>
+            <td class="cell-amount">{{ deal.amount }}</td>
+            <td class="cell-status">{{ deal.status }}</td>
+            <td class="cell-stage">{{ deal.stage }}</td>
+            <td class="cell-manager">{{ deal.manager }}</td>
             <td class="cell-date">{{ deal.created_at }}</td>
+            <td class="cell-date">{{ deal.closed_at }}</td>
           </tr>
         </tbody>
       </table>
@@ -67,20 +50,207 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 
-const deals = ref([])
+// Разнообразные данные для демонстрации
+const deals = ref([
+  { 
+    id: 101, 
+    title: 'Разработка интернет-магазина', 
+    amount: 2500000, 
+    status: 'Активна', 
+    stage: 'Переговоры', 
+    manager: 'Иванов А.А.', 
+    created_at: '15.01.2026', 
+    closed_at: '15.03.2026' 
+  },
+  { 
+    id: 87, 
+    title: 'Мобильное приложение для банка', 
+    amount: 4500000, 
+    status: 'Завершена', 
+    stage: 'Завершена', 
+    manager: 'Петрова Е.В.', 
+    created_at: '10.12.2025', 
+    closed_at: '28.02.2026' 
+  },
+  { 
+    id: 234, 
+    title: 'Сайт для букмекерской конторы', 
+    amount: 0, 
+    status: 'Отклонена', 
+    stage: 'Отказ', 
+    manager: 'Соснихин Н.С.', 
+    created_at: '05.03.2026', 
+    closed_at: '06.03.2026' 
+  },
+  { 
+    id: 56, 
+    title: 'CRM система для автосалона', 
+    amount: 1800000, 
+    status: 'Активна', 
+    stage: 'Разработка', 
+    manager: 'Козлов Д.И.', 
+    created_at: '20.02.2026', 
+    closed_at: '20.05.2026' 
+  },
+  { 
+    id: 312, 
+    title: 'Мобильное приложение для доставки', 
+    amount: 3200000, 
+    status: 'Завершена', 
+    stage: 'Завершена', 
+    manager: 'Иванов А.А.', 
+    created_at: '01.11.2025', 
+    closed_at: '15.01.2026' 
+  },
+  { 
+    id: 45, 
+    title: 'Сайт для стоматологической клиники', 
+    amount: 750000, 
+    status: 'Активна', 
+    stage: 'Сбор требований', 
+    manager: 'Смирнова О.Н.', 
+    created_at: '01.03.2026', 
+    closed_at: '01.05.2026' 
+  },
+  { 
+    id: 189, 
+    title: 'Система автоматизации склада', 
+    amount: 5300000, 
+    status: 'Завершена', 
+    stage: 'Завершена', 
+    manager: 'Петрова Е.В.', 
+    created_at: '15.09.2025', 
+    closed_at: '20.12.2025' 
+  },
+  { 
+    id: 73, 
+    title: 'Разработка чат-бота для интернет-магазина', 
+    amount: 450000, 
+    status: 'Активна', 
+    stage: 'Тестирование', 
+    manager: 'Козлов Д.И.', 
+    created_at: '10.02.2026', 
+    closed_at: '10.04.2026' 
+  },
+  { 
+    id: 402, 
+    title: 'Портал для государственной организации', 
+    amount: 8200000, 
+    status: 'Приостановлена', 
+    stage: 'Согласование', 
+    manager: 'Соснихин Н.С.', 
+    created_at: '01.12.2025', 
+    closed_at: '01.06.2026' 
+  },
+  { 
+    id: 28, 
+    title: 'Сайт для ресторанной сети', 
+    amount: 1200000, 
+    status: 'Активна', 
+    stage: 'Дизайн', 
+    manager: 'Смирнова О.Н.', 
+    created_at: '25.02.2026', 
+    closed_at: '25.04.2026' 
+  },
+  { 
+    id: 156, 
+    title: 'Система управления проектами', 
+    amount: 2900000, 
+    status: 'Завершена', 
+    stage: 'Завершена', 
+    manager: 'Иванов А.А.', 
+    created_at: '01.08.2025', 
+    closed_at: '30.11.2025' 
+  },
+  { 
+    id: 67, 
+    title: 'Мобильное приложение для фитнес-клуба', 
+    amount: 980000, 
+    status: 'Активна', 
+    stage: 'Разработка', 
+    manager: 'Козлов Д.И.', 
+    created_at: '15.03.2026', 
+    closed_at: '15.06.2026' 
+  },
+  { 
+    id: 243, 
+    title: 'Сайт для агентства недвижимости', 
+    amount: 850000, 
+    status: 'Отклонена', 
+    stage: 'Отказ', 
+    manager: 'Петрова Е.В.', 
+    created_at: '01.02.2026', 
+    closed_at: '02.02.2026' 
+  },
+  { 
+    id: 19, 
+    title: 'Интернет-магазин для букмекерской конторы', 
+    amount: 0, 
+    status: 'Завершена', 
+    stage: 'Завершена', 
+    manager: 'Соснихин Н.С.', 
+    created_at: '01.01.2026', 
+    closed_at: '01.01.2026' 
+  },
+  { 
+    id: 504, 
+    title: 'Облачная платформа для образования', 
+    amount: 6700000, 
+    status: 'Активна', 
+    stage: 'Проектирование', 
+    manager: 'Иванов А.А.', 
+    created_at: '05.01.2026', 
+    closed_at: '05.07.2026' 
+  },
+  { 
+    id: 38, 
+    title: 'Система для онлайн-бронирования отелей', 
+    amount: 2100000, 
+    status: 'Завершена', 
+    stage: 'Завершена', 
+    manager: 'Смирнова О.Н.', 
+    created_at: '15.10.2025', 
+    closed_at: '15.02.2026' 
+  },
+  { 
+    id: 92, 
+    title: 'Мобильное приложение для такси', 
+    amount: 1500000, 
+    status: 'Активна', 
+    stage: 'Тестирование', 
+    manager: 'Козлов Д.И.', 
+    created_at: '20.01.2026', 
+    closed_at: '20.04.2026' 
+  },
+  { 
+    id: 178, 
+    title: 'Сайт для юридической компании', 
+    amount: 520000, 
+    status: 'Приостановлена', 
+    stage: 'Сбор требований', 
+    manager: 'Петрова Е.В.', 
+    created_at: '10.03.2026', 
+    closed_at: '10.05.2026' 
+  },
+  { 
+    id: 5, 
+    title: 'Платформа для интернет-торговли', 
+    amount: 9500000, 
+    status: 'Активна', 
+    stage: 'Переговоры', 
+    manager: 'Соснихин Н.С.', 
+    created_at: '01.12.2025', 
+    closed_at: '01.08.2026' 
+  }
+])
 
-async function loadDeals() {
-  const res = await fetch('/api/deals')
-  deals.value = await res.json()
-}
-
-onMounted(loadDeals)
-
+// Состояние сортировки
 const sortKey = ref(null)
 const sortOrder = ref('asc')
 
+// Функция сортировки
 const sortBy = (key) => {
   if (sortKey.value === key) {
     sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
@@ -90,12 +260,14 @@ const sortBy = (key) => {
   }
 }
 
+// Функция для парсинга даты из формата DD.MM.YYYY
 const parseDate = (str) => {
   if (!str) return new Date(0)
   const [day, month, year] = str.split('.').map(Number)
   return new Date(year, month - 1, day)
 }
 
+// Вычисляемое свойство с отсортированными данными
 const sortedDeals = computed(() => {
   if (!sortKey.value) return deals.value
 
@@ -103,33 +275,22 @@ const sortedDeals = computed(() => {
     let aVal = a[sortKey.value]
     let bVal = b[sortKey.value]
 
+    // Для числовых полей
     if (typeof aVal === 'number' && typeof bVal === 'number') {
       return aVal - bVal
     }
 
-    if (sortKey.value === 'created_at') {
+    // Для полей с датами
+    if (sortKey.value === 'created_at' || sortKey.value === 'closed_at') {
       return parseDate(aVal) - parseDate(bVal)
     }
 
+    // Для строковых полей (регистронезависимое сравнение)
     return String(aVal).localeCompare(String(bVal), 'ru', { sensitivity: 'base' })
   })
 
   return sortOrder.value === 'asc' ? sorted : sorted.reverse()
 })
-
-async function updateAmount(deal) {
-  try {
-    const res = await fetch(`/api/deals/${deal.id}/amount`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount: deal.amount })
-    })
-    if (!res.ok) throw new Error()
-  } catch (e) {
-    alert('Не удалось обновить сумму')
-    await loadDeals()
-  }
-}
 </script>
 
 <style scoped>
@@ -162,13 +323,13 @@ async function updateAmount(deal) {
 }
 
 .deals-table th:nth-child(1) { width: 50px; }
-.deals-table th:nth-child(2) { width: 180px; }
-.deals-table th:nth-child(3) { width: 120px; }
-.deals-table th:nth-child(4) { width: 150px; }
-.deals-table th:nth-child(5) { width: 170px; }
-.deals-table th:nth-child(6) { width: 130px; }
-.deals-table th:nth-child(7) { width: 100px; }
-.deals-table th:nth-child(8) { width: 120px; }
+.deals-table th:nth-child(2) { width: 250px; }
+.deals-table th:nth-child(3) { width: 90px; }
+.deals-table th:nth-child(4) { width: 110px; }
+.deals-table th:nth-child(5) { width: 110px; }
+.deals-table th:nth-child(6) { width: 150px; }
+.deals-table th:nth-child(7) { width: 130px; }
+.deals-table th:nth-child(8) { width: 130px; }
 
 .deals-table th {
   font-weight: 600;
@@ -209,62 +370,13 @@ async function updateAmount(deal) {
   color: #718096;
 }
 
-.cell-phone, .cell-email {
-  font-size: 12px;
-}
-
 .cell-amount {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  padding-left: 16px;
 }
 
-.amount-input {
-  width: 100px;
-  padding: 4px 8px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 13px;
-  outline: none;
-  background-color: white;
-  transition: border-color 0.15s;
+.cell-title, .cell-manager {
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
-.amount-input:focus {
-  border-color: #3182ce;
-}
-
-.currency {
-  color: #718096;
-  font-weight: 500;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.status-active {
-  background-color: #ebf8ff;
-  color: #2b6cb0;
-}
-
-.status-closed {
-  background-color: #f0fff4;
-  color: #276749;
-}
-
-.cell-date {
-  color: #718096;
-  font-size: 12px;
-}
-
-.no-results {
-  text-align: center;
-  color: #718096;
-  padding: 32px;
-}
 </style>
