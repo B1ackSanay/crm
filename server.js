@@ -153,7 +153,28 @@ app.patch('/api/orders/:id/status', requirePageAccess('Заявки'), (req, res
 });
 
 app.get('/api/deals', requirePageAccess('Сделки'), (req, res) => {
-  const deals = getDeals();
+  let deals = getDeals();
+  
+  // Если сделок нет, создаем их из существующих заявок
+  if (deals.length === 0) {
+    const orders = getOrders();
+    const maxDealId = deals.length > 0 ? Math.max(...deals.map(d => d.id)) : 0;
+    
+    deals = orders.map((order, index) => ({
+      id: maxDealId + index + 1,
+      order_id: order.id,
+      title: order.company,
+      client: order.name,
+      phone: order.phone,
+      email: order.email,
+      amount: 0,
+      status: order.status === 'закрыта' ? 'Завершена' : 'Активна',
+      created_at: order.created_at
+    }));
+    
+    saveDeals(deals);
+  }
+  
   res.json(deals);
 });
 
