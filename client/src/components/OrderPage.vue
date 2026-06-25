@@ -71,7 +71,7 @@
             <th @click="sortBy('created_at')">Дата <span class="sort-icon" :class="{ active: sortKey === 'created_at' }">{{ sortKey === 'created_at' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
             <th @click="sortBy('time')">Время <span class="sort-icon" :class="{ active: sortKey === 'time' }">{{ sortKey === 'time' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
             <th @click="sortBy('message')">Комментарий <span class="sort-icon" :class="{ active: sortKey === 'message' }">{{ sortKey === 'message' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
-            <th @click="sortBy('status')">Статус <span class="sort-icon" :class="{ active: sortKey === 'status' }">{{ sortKey === 'status' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
+            <th>Статус</th>
           </tr>
         </thead>
         <tbody>
@@ -99,9 +99,17 @@
             <td class="cell-time">{{ order.time }}</td>
             <td class="cell-message">{{ order.message || '—' }}</td>
             <td>
-              <span class="status-badge" :class="'status-' + order.status?.replace(' ', '-')">
-                {{ order.status }}
-              </span>
+              <select 
+                class="status-select" 
+                :class="'status-' + order.status?.replace(' ', '-')"
+                :value="order.status"
+                @change="updateStatus(order, $event.target.value)"
+                @click.stop
+              >
+                <option value="новая">Новая</option>
+                <option value="в работе">В работе</option>
+                <option value="закрыта">Закрыта</option>
+              </select>
             </td>
           </tr>
         </tbody>
@@ -116,9 +124,13 @@ import { ref, computed, onMounted } from 'vue'
 const orders = ref([])
 
 onMounted(async () => {
+  await loadOrders()
+})
+
+async function loadOrders() {
   const res = await fetch('/api/orders')
   orders.value = await res.json()
-})
+}
 
 const search = ref('')
 const filterStatus = ref('')
@@ -226,6 +238,35 @@ const sortBy = (key) => {
   } else {
     sortKey.value = key
     sortOrder.value = 'asc'
+  }
+}
+
+// Функция обновления статуса
+async function updateStatus(order, newStatus) {
+  const oldStatus = order.status
+  
+  // Оптимистичное обновление
+  order.status = newStatus
+
+  try {
+    const res = await fetch(`/api/orders/${order.id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    })
+
+    if (!res.ok) {
+      const data = await res.json()
+      throw new Error(data.error || 'Ошибка обновления статуса')
+    }
+
+    // Успешно обновили
+    const data = await res.json()
+    order.status = data.order.status
+  } catch (error) {
+    // Откатываем статус при ошибке
+    order.status = oldStatus
+    alert(error.message || 'Не удалось обновить статус')
   }
 }
 </script>
@@ -402,26 +443,41 @@ const sortBy = (key) => {
   color: #4a5568;
 }
 
-.status-badge {
+.status-select {
   display: inline-block;
   padding: 3px 10px;
   border-radius: 20px;
   font-size: 12px;
   font-weight: 500;
-  white-space: nowrap;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a5568' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 28px;
+  min-width: 90px;
+  text-align: center;
 }
 
-.status-новая {
+.status-select:focus {
+  box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.3);
+}
+
+.status-select.status-новая {
   background-color: #ebf8ff;
   color: #2b6cb0;
 }
 
-.status-в-работе {
+.status-select.status-в-работе {
   background-color: #fefce8;
   color: #92400e;
 }
 
-.status-закрыта {
+.status-select.status-закрыта {
   background-color: #f0fff4;
   color: #276749;
 }
