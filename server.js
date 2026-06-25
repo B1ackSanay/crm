@@ -52,7 +52,8 @@ function saveRoles(roles) {
 
 function getDeals() {
   try {
-    return JSON.parse(fs.readFileSync(path.join(__dirname, 'data/deals.json'), 'utf8'));
+    const data = fs.readFileSync(path.join(__dirname, 'data/deals.json'), 'utf8');
+    return JSON.parse(data);
   } catch {
     return [];
   }
@@ -83,6 +84,32 @@ function requirePageAccess(pageName) {
     next();
   };
 }
+
+// Инициализация сделок при старте сервера
+function initializeDeals() {
+  const deals = getDeals();
+  if (deals.length === 0) {
+    const orders = getOrders();
+    if (orders.length > 0) {
+      const newDeals = orders.map((order) => ({
+        id: order.id,
+        order_id: order.id,
+        title: order.company || 'Без названия',
+        client: order.name || 'Не указан',
+        phone: order.phone || '',
+        email: order.email || '',
+        amount: 0,
+        status: order.status === 'закрыта' ? 'Завершена' : 'Активна',
+        created_at: order.created_at
+      }));
+      saveDeals(newDeals);
+      console.log(`✅ Создано ${newDeals.length} сделок из заявок`);
+    }
+  }
+}
+
+// Запускаем инициализацию
+initializeDeals();
 
 app.post('/api/login', (req, res) => {
   const { login, password } = req.body;
@@ -149,32 +176,20 @@ app.patch('/api/orders/:id/status', requirePageAccess('Заявки'), (req, res
 
   order.status = status;
   fs.writeFileSync(path.join(__dirname, 'data/orders.json'), JSON.stringify(orders, null, 2), 'utf8');
+  
+  // Обновляем статус в сделке
+  const deals = getDeals();
+  const deal = deals.find(d => d.order_id === order.id);
+  if (deal) {
+    deal.status = status === 'закрыта' ? 'Завершена' : 'Активна';
+    saveDeals(deals);
+  }
+  
   res.json({ success: true });
 });
 
 app.get('/api/deals', requirePageAccess('Сделки'), (req, res) => {
-  let deals = getDeals();
-  
-  // Если сделок нет, создаем их из существующих заявок
-  if (deals.length === 0) {
-    const orders = getOrders();
-    const maxDealId = deals.length > 0 ? Math.max(...deals.map(d => d.id)) : 0;
-    
-    deals = orders.map((order, index) => ({
-      id: maxDealId + index + 1,
-      order_id: order.id,
-      title: order.company,
-      client: order.name,
-      phone: order.phone,
-      email: order.email,
-      amount: 0,
-      status: order.status === 'закрыта' ? 'Завершена' : 'Активна',
-      created_at: order.created_at
-    }));
-    
-    saveDeals(deals);
-  }
-  
+  const deals = getDeals();
   res.json(deals);
 });
 
@@ -267,10 +282,10 @@ app.post('/api/request', (req, res) => {
   const newDeal = {
     id: deals.length > 0 ? Math.max(...deals.map(d => d.id)) + 1 : 1,
     order_id: newOrder.id,
-    title: newOrder.company,
-    client: newOrder.name,
-    phone: newOrder.phone,
-    email: newOrder.email,
+    title: newOrder.company || 'Без названия',
+    client: newOrder.name || 'Не указан',
+    phone: newOrder.phone || '',
+    email: newOrder.email || '',
     amount: 0,
     status: newOrder.status === 'закрыта' ? 'Завершена' : 'Активна',
     created_at: newOrder.created_at
