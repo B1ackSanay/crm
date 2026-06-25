@@ -1,0 +1,44 @@
+[
+  {
+    "id": 1,
+    "order_id": 1,
+    "title": "ООО \"СОФТАРТ\"",
+    "client": "Дмитрий",
+    "phone": "+7 (904) 063-26-07",
+    "email": "example@email.com",
+    "amount": 0,
+    "status": "Активна",
+    "stage": "Новая",
+    "manager": "admin",
+    "created_at": "22.06.2026",
+    "closed_at": ""
+  },
+  {
+    "id": 2,
+    "order_id": 2,
+    "title": "ООО \"ВЕКТОР\"",
+    "client": "Анна",
+    "phone": "+7 (916) 234-56-78",
+    "email": "anna@email.com",
+    "amount": 0,
+    "status": "Активна",
+    "stage": "В работе",
+    "manager": "admin",
+    "created_at": "22.06.2026",
+    "closed_at": ""
+  },
+  {
+    "id": 3,
+    "order_id": 3,
+    "title": "ИП Сергеев",
+    "client": "Сергей",
+    "phone": "+7 (903) 111-22-33",
+    "email": "sergey@mail.ru",
+    "amount": 0,
+    "status": "Завершена",
+    "stage": "Завершена",
+    "manager": "admin",
+    "created_at": "21.06.2026",
+    "closed_at": "21.06.2026"
+  }
+]

@@ -72,11 +72,12 @@
             <th @click="sortBy('time')">Время <span class="sort-icon" :class="{ active: sortKey === 'time' }">{{ sortKey === 'time' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
             <th @click="sortBy('message')">Комментарий <span class="sort-icon" :class="{ active: sortKey === 'message' }">{{ sortKey === 'message' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
             <th @click="sortBy('status')">Статус <span class="sort-icon" :class="{ active: sortKey === 'status' }">{{ sortKey === 'status' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
+            <th>Действия</th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="filteredAndSorted.length === 0">
-            <td colspan="10" class="no-results">Ничего не найдено</td>
+            <td colspan="11" class="no-results">Ничего не найдено</td>
           </tr>
           <tr v-for="order in filteredAndSorted" :key="order.id">
             <td class="cell-id">{{ order.id }}</td>
@@ -104,6 +105,9 @@
                 <option value="в работе">В работе</option>
                 <option value="закрыта">Закрыта</option>
               </select>
+            </td>
+            <td>
+              <button @click="deleteOrder(order.id)" class="delete-btn" title="Удалить заявку">🗑</button>
             </td>
           </tr>
         </tbody>
@@ -246,6 +250,17 @@ async function updateStatus(order) {
     await loadOrders()
   }
 }
+
+async function deleteOrder(id) {
+  if (!confirm('Удалить заявку? Связанная сделка также будет удалена.')) return
+  try {
+    const res = await fetch(`/api/orders/${id}`, { method: 'DELETE' })
+    if (!res.ok) throw new Error()
+    await loadOrders()
+  } catch (e) {
+    alert('Не удалось удалить заявку')
+  }
+}
 </script>
 
 <style scoped>
@@ -369,6 +384,11 @@ async function updateStatus(order) {
   background-color: #f7fafc;
 }
 
+.orders-table th:last-child {
+  text-align: center;
+  cursor: default;
+}
+
 .sort-icon {
   display: inline-block;
   margin-left: 4px;
@@ -408,10 +428,6 @@ async function updateStatus(order) {
   white-space: nowrap;
 }
 
-.orders-table th:last-child {
-  text-align: center;
-}
-
 .cell-message {
   max-width: 220px;
   white-space: nowrap;
@@ -432,6 +448,20 @@ async function updateStatus(order) {
 
 .status-select:focus {
   border-color: #3182ce;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.15s;
+}
+
+.delete-btn:hover {
+  background-color: #fee2e2;
 }
 
 .no-results {
