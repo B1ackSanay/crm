@@ -71,7 +71,7 @@
             <th @click="sortBy('created_at')">Дата <span class="sort-icon" :class="{ active: sortKey === 'created_at' }">{{ sortKey === 'created_at' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
             <th @click="sortBy('time')">Время <span class="sort-icon" :class="{ active: sortKey === 'time' }">{{ sortKey === 'time' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
             <th @click="sortBy('message')">Комментарий <span class="sort-icon" :class="{ active: sortKey === 'message' }">{{ sortKey === 'message' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
-            <th @click="sortBy('status')">Статус <span class="sort-icon" :class="{ active: sortKey === 'status' }">{{ sortKey === 'status' ? (sortOrder === 'asc' ? '↑' : '↓') : '↓' }}</span></th>
+            <th>Статус</th>
           </tr>
         </thead>
         <tbody>
@@ -99,9 +99,16 @@
             <td class="cell-time">{{ order.time }}</td>
             <td class="cell-message">{{ order.message || '—' }}</td>
             <td>
-              <span class="status-badge" :class="'status-' + order.status?.replace(' ', '-')">
-                {{ order.status }}
-              </span>
+              <select 
+                class="status-select" 
+                :class="'status-' + order.status?.replace(' ', '-')"
+                v-model="order.status"
+                @change="updateStatus(order)"
+              >
+                <option value="новая">Новая</option>
+                <option value="в работе">В работе</option>
+                <option value="закрыта">Закрыта</option>
+              </select>
             </td>
           </tr>
         </tbody>
@@ -116,9 +123,13 @@ import { ref, computed, onMounted } from 'vue'
 const orders = ref([])
 
 onMounted(async () => {
+  await loadOrders()
+})
+
+async function loadOrders() {
   const res = await fetch('/api/orders')
   orders.value = await res.json()
-})
+}
 
 const search = ref('')
 const filterStatus = ref('')
@@ -226,6 +237,26 @@ const sortBy = (key) => {
   } else {
     sortKey.value = key
     sortOrder.value = 'asc'
+  }
+}
+
+// Обновление статуса заявки
+async function updateStatus(order) {
+  try {
+    const res = await fetch(`/api/orders/${order.id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: order.status })
+    })
+
+    if (!res.ok) {
+      const data = await res.json()
+      alert(data.error || 'Ошибка обновления статуса')
+      await loadOrders() // Перезагружаем для восстановления
+    }
+  } catch (e) {
+    alert('Не удалось подключиться к серверу')
+    await loadOrders() // Перезагружаем для восстановления
   }
 }
 </script>
@@ -351,6 +382,14 @@ const sortBy = (key) => {
   background-color: #f7fafc;
 }
 
+.orders-table th:last-child {
+  cursor: default;
+}
+
+.orders-table th:last-child:hover {
+  background-color: transparent;
+}
+
 .sort-icon {
   display: inline-block;
   margin-left: 4px;
@@ -390,10 +429,6 @@ const sortBy = (key) => {
   white-space: nowrap;
 }
 
-.orders-table th:last-child {
-  text-align: center;
-}
-
 .cell-message {
   max-width: 220px;
   white-space: nowrap;
@@ -402,37 +437,50 @@ const sortBy = (key) => {
   color: #4a5568;
 }
 
-.status-badge {
-  display: inline-block;
-  padding: 3px 10px;
+/* Стили для селекта статуса */
+.status-select {
+  padding: 4px 8px;
   border-radius: 20px;
+  border: 1px solid #e2e8f0;
   font-size: 12px;
   font-weight: 500;
-  white-space: nowrap;
+  cursor: pointer;
+  outline: none;
+  background-color: #ffffff;
+  transition: all 0.2s;
+  min-width: 100px;
 }
 
-.status-новая {
+.status-select:hover {
+  border-color: #a0aec0;
+}
+
+.status-select:focus {
+  border-color: #3182ce;
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+}
+
+.status-select.status-новая {
   background-color: #ebf8ff;
   color: #2b6cb0;
+  border-color: #bee3f8;
 }
 
-.status-в-работе {
+.status-select.status-в-работе {
   background-color: #fefce8;
   color: #92400e;
+  border-color: #fde68a;
 }
 
-.status-закрыта {
+.status-select.status-закрыта {
   background-color: #f0fff4;
   color: #276749;
+  border-color: #9ae6b4;
 }
 
 .no-results {
   text-align: center;
   color: #718096;
   padding: 32px;
-}
-
-.th {
-  justify-content: left;
 }
 </style>
