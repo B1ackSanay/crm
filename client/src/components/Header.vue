@@ -3,7 +3,7 @@
     <!-- Левая часть: Логотип и кнопка -->
     <div class="header-left">
       <img src="../components/icons/logo.png" alt="">
-      <a href="https://b1acksanay.github.io/lending/"><button class="site-button">Перейти на сайт</button></a>
+      <a href="https://b1acksanay.github.io/lending/"><button class="site-button">Перейтвви на сайт</button></a>
     </div>
 
     <!-- Правая часть: Поиск и профиль -->
