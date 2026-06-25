@@ -50,6 +50,18 @@ function saveRoles(roles) {
   fs.writeFileSync(path.join(__dirname, 'data/roles.json'), JSON.stringify(roles, null, 2), 'utf8');
 }
 
+function getDeals() {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(__dirname, 'data/deals.json'), 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+function saveDeals(deals) {
+  fs.writeFileSync(path.join(__dirname, 'data/deals.json'), JSON.stringify(deals, null, 2), 'utf8');
+}
+
 function excludeTechAdmin(roles) {
   const { tech_admin, ...rest } = roles;
   return rest;
@@ -140,6 +152,31 @@ app.patch('/api/orders/:id/status', requirePageAccess('Заявки'), (req, res
   res.json({ success: true });
 });
 
+app.get('/api/deals', requirePageAccess('Сделки'), (req, res) => {
+  const deals = getDeals();
+  res.json(deals);
+});
+
+app.patch('/api/deals/:id/amount', requirePageAccess('Сделки'), (req, res) => {
+  const { id } = req.params;
+  const { amount } = req.body;
+  
+  if (amount === undefined || amount === null) {
+    return res.status(400).json({ error: 'Сумма обязательна' });
+  }
+
+  const deals = getDeals();
+  const deal = deals.find(d => d.id === parseInt(id));
+  
+  if (!deal) {
+    return res.status(404).json({ error: 'Сделка не найдена' });
+  }
+
+  deal.amount = Number(amount);
+  saveDeals(deals);
+  res.json({ success: true });
+});
+
 app.get('/api/roles', requirePageAccess('Роли и права'), (req, res) => {
   res.json({ roles: excludeTechAdmin(getRoles()), pages: ALL_PAGES });
 });
@@ -203,6 +240,22 @@ app.post('/api/request', (req, res) => {
 
   orders.push(newOrder);
   fs.writeFileSync(ordersPath, JSON.stringify(orders, null, 2), 'utf8');
+
+  // Создаем сделку
+  const deals = getDeals();
+  const newDeal = {
+    id: deals.length > 0 ? Math.max(...deals.map(d => d.id)) + 1 : 1,
+    order_id: newOrder.id,
+    title: newOrder.company,
+    client: newOrder.name,
+    phone: newOrder.phone,
+    email: newOrder.email,
+    amount: 0,
+    status: newOrder.status === 'закрыта' ? 'Завершена' : 'Активна',
+    created_at: newOrder.created_at
+  };
+  deals.push(newDeal);
+  saveDeals(deals);
 
   res.json({ success: true });
 });
