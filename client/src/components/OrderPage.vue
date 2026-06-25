@@ -99,9 +99,11 @@
             <td class="cell-time">{{ order.time }}</td>
             <td class="cell-message">{{ order.message || '—' }}</td>
             <td>
-              <span class="status-badge" :class="'status-' + order.status?.replace(' ', '-')">
-                {{ order.status }}
-              </span>
+              <select v-model="order.status" @change="updateStatus(order)" class="status-select">
+                <option value="новая">Новая</option>
+                <option value="в работе">В работе</option>
+                <option value="закрыта">Закрыта</option>
+              </select>
             </td>
           </tr>
         </tbody>
@@ -115,10 +117,12 @@ import { ref, computed, onMounted } from 'vue'
 
 const orders = ref([])
 
-onMounted(async () => {
+async function loadOrders() {
   const res = await fetch('/api/orders')
   orders.value = await res.json()
-})
+}
+
+onMounted(loadOrders)
 
 const search = ref('')
 const filterStatus = ref('')
@@ -226,6 +230,20 @@ const sortBy = (key) => {
   } else {
     sortKey.value = key
     sortOrder.value = 'asc'
+  }
+}
+
+async function updateStatus(order) {
+  try {
+    const res = await fetch(`/api/orders/${order.id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: order.status })
+    })
+    if (!res.ok) throw new Error()
+  } catch (e) {
+    alert('Не удалось обновить статус')
+    await loadOrders()
   }
 }
 </script>
@@ -402,37 +420,23 @@ const sortBy = (key) => {
   color: #4a5568;
 }
 
-.status-badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 20px;
+.status-select {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
   font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
+  background-color: white;
+  cursor: pointer;
+  outline: none;
 }
 
-.status-новая {
-  background-color: #ebf8ff;
-  color: #2b6cb0;
-}
-
-.status-в-работе {
-  background-color: #fefce8;
-  color: #92400e;
-}
-
-.status-закрыта {
-  background-color: #f0fff4;
-  color: #276749;
+.status-select:focus {
+  border-color: #3182ce;
 }
 
 .no-results {
   text-align: center;
   color: #718096;
   padding: 32px;
-}
-
-.th {
-  justify-content: left;
 }
 </style>

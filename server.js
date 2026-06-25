@@ -226,6 +226,27 @@ app.delete('/api/roles/:key', requirePageAccess('Роли и права'), (req,
   res.json({ success: true, roles: excludeTechAdmin(roles), pages: ALL_PAGES });
 });
 
+app.patch('/api/orders/:id/status', requirePageAccess('Заявки'), (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  
+  if (!['новая', 'в работе', 'закрыта'].includes(status)) {
+    return res.status(400).json({ error: 'Некорректный статус' });
+  }
+
+  const orders = getOrders();
+  const order = orders.find(o => o.id === parseInt(id));
+  
+  if (!order) {
+    return res.status(404).json({ error: 'Заявка не найдена' });
+  }
+
+  order.status = status;
+  fs.writeFileSync(path.join(__dirname, 'data/orders.json'), JSON.stringify(orders, null, 2), 'utf8');
+  res.json({ success: true });
+});
+
+
 app.post('/api/logout', (req, res) => {
   req.session.destroy((err) => {
     if (err) {
