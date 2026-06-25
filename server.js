@@ -50,18 +50,6 @@ function saveRoles(roles) {
   fs.writeFileSync(path.join(__dirname, 'data/roles.json'), JSON.stringify(roles, null, 2), 'utf8');
 }
 
-function getDeals() {
-  try {
-    return JSON.parse(fs.readFileSync(path.join(__dirname, 'data/deals.json'), 'utf8'));
-  } catch {
-    return [];
-  }
-}
-
-function saveDeals(deals) {
-  fs.writeFileSync(path.join(__dirname, 'data/deals.json'), JSON.stringify(deals, null, 2), 'utf8');
-}
-
 function excludeTechAdmin(roles) {
   const { tech_admin, ...rest } = roles;
   return rest;
@@ -132,29 +120,6 @@ app.get('/api/orders', requirePageAccess('Заявки'), (req, res) => {
   res.json(getOrders());
 });
 
-app.delete('/api/orders/:id', requirePageAccess('Заявки'), (req, res) => {
-  const { id } = req.params;
-  const orders = getOrders();
-  const orderIndex = orders.findIndex(o => o.id === parseInt(id));
-  
-  if (orderIndex === -1) {
-    return res.status(404).json({ error: 'Заявка не найдена' });
-  }
-  
-  const order = orders[orderIndex];
-  
-  // Удаляем связанную сделку
-  const deals = getDeals();
-  const updatedDeals = deals.filter(d => d.order_id !== order.id);
-  saveDeals(updatedDeals);
-  
-  // Удаляем заявку
-  orders.splice(orderIndex, 1);
-  fs.writeFileSync(path.join(__dirname, 'data/orders.json'), JSON.stringify(orders, null, 2), 'utf8');
-  
-  res.json({ success: true });
-});
-
 app.patch('/api/orders/:id/status', requirePageAccess('Заявки'), (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
@@ -172,35 +137,7 @@ app.patch('/api/orders/:id/status', requirePageAccess('Заявки'), (req, res
 
   order.status = status;
   fs.writeFileSync(path.join(__dirname, 'data/orders.json'), JSON.stringify(orders, null, 2), 'utf8');
-  
-  // Обновляем связанную сделку
-  const deals = getDeals();
-  const deal = deals.find(d => d.order_id === order.id);
-  if (deal) {
-    const statusMap = {
-      'новая': { status: 'Активна', stage: 'Новая' },
-      'в работе': { status: 'Активна', stage: 'В работе' },
-      'закрыта': { status: 'Завершена', stage: 'Завершена' }
-    };
-    const mapped = statusMap[status];
-    deal.status = mapped.status;
-    deal.stage = mapped.stage;
-    if (status === 'закрыта') {
-      const now = new Date();
-      deal.closed_at = now.toLocaleDateString('ru-RU', {
-        day: '2-digit', month: '2-digit', year: 'numeric'
-      });
-    } else {
-      deal.closed_at = '';
-    }
-    saveDeals(deals);
-  }
-  
   res.json({ success: true });
-});
-
-app.get('/api/deals', requirePageAccess('Сделки'), (req, res) => {
-  res.json(getDeals());
 });
 
 app.get('/api/roles', requirePageAccess('Роли и права'), (req, res) => {
@@ -266,25 +203,6 @@ app.post('/api/request', (req, res) => {
 
   orders.push(newOrder);
   fs.writeFileSync(ordersPath, JSON.stringify(orders, null, 2), 'utf8');
-
-  // Автоматически создаем сделку
-  const deals = getDeals();
-  const newDeal = {
-    id: deals.length > 0 ? Math.max(...deals.map(d => d.id)) + 1 : 1,
-    order_id: newOrder.id,
-    title: newOrder.company,
-    client: newOrder.name,
-    phone: newOrder.phone,
-    email: newOrder.email,
-    amount: 0,
-    status: 'Активна',
-    stage: 'Новая',
-    manager: req.session.user ? req.session.user.login : 'Система',
-    created_at: newOrder.created_at,
-    closed_at: ''
-  };
-  deals.push(newDeal);
-  saveDeals(deals);
 
   res.json({ success: true });
 });
