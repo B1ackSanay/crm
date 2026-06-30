@@ -115,6 +115,30 @@
     "message": "авайай",
     "created_at": "25.06.2026",
     "time": "19:31",
+    "status": "закрыта"
+  },
+  {
+    "id": 12,
+    "name": "Проверка 1",
+    "phone": "+7 898989898",
+    "email": "email@gmail.ru",
+    "company": "ООО \"СОФТАРТ\"",
+    "date": "2026-06-29",
+    "message": "описание",
+    "created_at": "29.06.2026",
+    "time": "19:29",
+    "status": "новая"
+  },
+  {
+    "id": 13,
+    "name": "авпвпв",
+    "phone": "89042597151",
+    "email": "anisimovasfamily2005@gmail.com",
+    "company": "ООО \"РП\"",
+    "date": "2026-06-30",
+    "message": "Туфли хочу розовые",
+    "created_at": "30.06.2026",
+    "time": "15:57",
     "status": "новая"
   }
 ]
